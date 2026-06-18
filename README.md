@@ -17,7 +17,9 @@
 - `docs/`: Documentation and architecture maps.
 - `data/`: Raw and processed knowledge base data.
 - `rag/`: RAG pipeline (ingestion, embeddings, retrieval).
-- `ai/`: GPT logic and prompt templates.
-- `schemas/`: Data models and validation schemas.
+- `ai/`: GPT logic, prompt templates, and data schemas.
+  - `prompts/`: AI prompt templates.
+  - `gpt/`: Core GPT integration logic.
+  - `schemas/`: Data models and validation schemas.
 - `tests/`: Unit and integration tests.
 - `outputs/`: Generated reports and logs.
