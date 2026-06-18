@@ -1,5 +1,8 @@
 # ORLaunch AI - Hybrid RAG + GPT-4o Mini MVP
 
+## 🎯 Project Objective
+Allow multiple team members to work independently while maintaining a stable integration environment. All work must flow through **develop** before reaching **main**.
+
 ## 🚀 Project Strategy
 
 ### 1. Repository Branch Structure
