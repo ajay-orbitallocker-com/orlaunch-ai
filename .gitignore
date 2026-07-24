@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+batch_input.jsonl
+data/chromadb/
+src/data/chromadb/

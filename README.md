@@ -26,3 +26,17 @@ Allow multiple team members to work independently while maintaining a stable int
   - `schemas/`: Data models and validation schemas.
 - `tests/`: Unit and integration tests.
 - `outputs/`: Generated reports and logs.
+
+## Setup
+
+1. Clone the repo
+2. Create and activate a virtual environment:
+    python -m venv venv
+    venv\Scripts\activate # Windows
+    source venv/bin/activate # Mac/Linux
+3. Install dependencies:
+    pip install -r requirements.txt
+4. Create a `.env` file in the project root with:
+    OPENAI_API_KEY=your_key_here
+5. Run ingestion:
+    python -m src.embeddings.embed_and_store

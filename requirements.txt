@@ -1,0 +1,7 @@
+python-dotenv
+requests
+chromadb
+openai
+tiktoken
+beautifulsoup4
+tenacity
