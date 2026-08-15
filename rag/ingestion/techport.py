@@ -44,9 +44,9 @@ def _build_document_lines(title, trl_begin, trl_current, trl_end, description, b
     
     return "\n".join(lines)
 
-def build_project(project : dict) -> str:
-    data = project["project"]
-
+def build_project_document(item: dict) -> str:
+    """Build the labeled-field text block for a TechPort project."""
+    data = item.get("project", item)
     return _build_document_lines(
         title=data.get("title", ""),
         trl_begin=data.get("trlBegin"),
@@ -54,16 +54,4 @@ def build_project(project : dict) -> str:
         trl_end=data.get("trlEnd"),
         description=strip_html(data.get("description", "")),
         benefits=strip_html(data.get("benefits", "")),
-    )
-
-
-def build_project_from_scratch(item : dict) -> str:
-
-    return _build_document_lines(
-        title = item.get("title" , ""),
-        trl_begin = item.get("trlBegin"),
-        trl_current = item.get("trlCurrent"),
-        trl_end = item.get("trlEnd"),
-        description = strip_html(item.get("description" , "")),
-        benefits = strip_html(item.get("benefits" , "")),
     )

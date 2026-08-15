@@ -16,6 +16,11 @@ TEST_STARTUP_IDEAS = [
         "id": "idea_03",
         "domain": "In-Space Servicing",
         "idea": "Autonomous robotic arm for satellite refueling and debris mitigation in Low Earth Orbit"
+    },
+    {
+        "id": "idea_04",
+        "domain": "Orbital Satellite Repair Droid (Reference Use Case)",
+        "idea": "A robotic spacecraft launched into orbit to perform repairs, inspections, autonomous docking, component replacement, and refueling on damaged or malfunctioning satellites."
     }
 ]
 

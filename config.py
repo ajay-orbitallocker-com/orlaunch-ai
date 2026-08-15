@@ -3,9 +3,8 @@ from dotenv import load_dotenv
 from openai import OpenAI
 import chromadb
 
-load_dotenv()
-
-client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+api_key = os.getenv("OPENAI_API_KEY", "mock-key")
+client = OpenAI(api_key=api_key)
 EMBEDDING_MODEL = "text-embedding-3-small"
 
 CHROMA_PATH = "src/data/chromadb"

@@ -7,8 +7,14 @@ RSS_FEEDS = [
     {"name": "Payload Space", "url": "https://payloadspace.com/feed/"}
 ]
 
-def fetch_rss_feed(feed_info: dict, max_items: int = 10) -> list[dict]:
-    """Fetch and parse space industry news items from RSS feeds."""
+MARKET_REPAIR_KEYWORDS = [
+    "servicing", "repair", "debris", "docking", "rpo", "osam",
+    "robotics", "astroscale", "clearspace", "spacelogistics",
+    "northrop", "life extension", "orbit", "refueling", "payload", "satellite"
+]
+
+def fetch_rss_feed(feed_info: dict, max_items: int = 15) -> list[dict]:
+    """Fetch and parse space industry news items from RSS feeds matching repair droid focus."""
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
     items = []
     
@@ -18,24 +24,29 @@ def fetch_rss_feed(feed_info: dict, max_items: int = 10) -> list[dict]:
             root = ET.fromstring(response.content)
             channel = root.find("channel")
             if channel is not None:
-                for elem in channel.findall("item")[:max_items]:
+                for elem in channel.findall("item"):
                     title = elem.findtext("title", "")
                     link = elem.findtext("link", "")
                     pub_date = elem.findtext("pubDate", "")
                     description_raw = elem.findtext("description", "")
                     
                     clean_desc = BeautifulSoup(description_raw, "html.parser").get_text(strip=True) if description_raw else ""
+                    combined = f"{title} {clean_desc}".lower()
                     
-                    if title and (clean_desc or link):
-                        doc_text = f"Title: {title}\nSource: {feed_info['name']} News\nCategory: Market Intelligence & Sector Trends\nDate: {pub_date}\nSummary: {clean_desc}"
-                        items.append({
-                            "source_id": f"NEWS_{hash(link)}",
-                            "title": title,
-                            "text": doc_text,
-                            "category": "Market Intelligence",
-                            "source": feed_info["name"],
-                            "url": link
-                        })
+                    # Filter for relevant servicing / satellite market news
+                    if any(kw in combined for kw in MARKET_REPAIR_KEYWORDS):
+                        if title and (clean_desc or link):
+                            doc_text = f"Title: {title}\nSource: {feed_info['name']} News\nCategory: Market Intelligence & Sector Trends\nDate: {pub_date}\nSummary: {clean_desc}"
+                            items.append({
+                                "source_id": f"NEWS_{hash(link)}",
+                                "title": title,
+                                "text": doc_text,
+                                "category": "Market Intelligence",
+                                "source": feed_info["name"],
+                                "url": link
+                            })
+                            if len(items) >= max_items:
+                                break
     except Exception as e:
         print(f"Error fetching RSS feed {feed_info['name']}: {e}")
         

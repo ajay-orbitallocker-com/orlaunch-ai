@@ -28,22 +28,31 @@ def fetch_all_projects() -> list[dict]:
     print("len(results):", len(data["results"]))
     return results
 
-def filter_candidates(projects : list[dict]) -> list[dict]:
+REPAIR_DROID_KEYWORDS = [
+    "servicing", "repair", "docking", "rendezvous", "robotic arm",
+    "grappling", "refueling", "debris", "osam", "rpo", "manipulator",
+    "satellite life", "in-space servicing", "inspection", "proximity"
+]
 
+def filter_candidates(projects : list[dict]) -> list[dict]:
+    """Filter projects matching candidate Taxonomy prefixes and Satellite Repair Droid keywords."""
     matches = []
     for project in projects:
-
+        title = (project.get("title") or "").lower()
         description = (project.get("description") or "").lower()
         benefits = (project.get("benefits") or "").lower()
-        if not (description or benefits):
+        combined_text = f"{title} {description} {benefits}"
+        
+        if not combined_text.strip():
             continue
 
+        primary_code = (project.get("primaryTx") or {}).get("code", "") or ""
+        tx_match = primary_code.startswith(CANDIDATE_TX_PREFIXES)
+        kw_match = any(kw in combined_text for kw in REPAIR_DROID_KEYWORDS)
 
-        primary_code = (project.get("primaryTx") or {}).get("code" , "") or ""
-        if primary_code.startswith(CANDIDATE_TX_PREFIXES):
+        if tx_match or kw_match:
             matches.append(project)
-    
-       
+
     return matches
 
 if __name__ == "__main__":

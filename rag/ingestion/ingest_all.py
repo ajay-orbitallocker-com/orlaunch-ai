@@ -1,9 +1,9 @@
 from rag.ingestion.fetch_all_projects import fetch_all_projects, filter_candidates
-from rag.ingestion.techport import build_project_from_scratch
+from rag.ingestion.techport import build_project_document
 from rag.ingestion.sec_edgar import fetch_all_financial_benchmarks
 from rag.ingestion.patents import fetch_all_space_patents
 from rag.ingestion.rss_market import fetch_all_market_news
-from rag.ingestion.chunk import chunk_text
+from rag.ingestion.chunk import chunk_text, chunk_document
 
 def collect_all_raw_documents(techport_limit: int | None = 50) -> list[dict]:
     """
@@ -23,7 +23,7 @@ def collect_all_raw_documents(techport_limit: int | None = 50) -> list[dict]:
         if techport_limit:
             filtered = filtered[:techport_limit]
         for p in filtered:
-            text = build_project_from_scratch(p)
+            text = build_project_document(p)
             p_id = p.get("projectId")
             all_docs.append({
                 "source_id": f"TECHPORT_{p_id}",

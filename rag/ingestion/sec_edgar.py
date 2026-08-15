@@ -6,10 +6,10 @@ SEC_HEADERS = {
 }
 
 SPACE_BENCHMARKS = [
-    {"name": "Planet Labs PBC", "cik": "0001836833", "symbol": "PL"},
+    {"name": "Northrop Grumman Corp", "cik": "0000072971", "symbol": "NOC"},
+    {"name": "Lockheed Martin Corp", "cik": "0000936468", "symbol": "LMT"},
     {"name": "Rocket Lab USA Inc", "cik": "0001819974", "symbol": "RKLB"},
-    {"name": "Spire Global Inc", "cik": "0001816017", "symbol": "SPIR"},
-    {"name": "Intuitive Machines Inc", "cik": "0001844452", "symbol": "LUNR"}
+    {"name": "Planet Labs PBC", "cik": "0001836833", "symbol": "PL"}
 ]
 
 def fetch_sec_company_facts(cik: str) -> dict:
