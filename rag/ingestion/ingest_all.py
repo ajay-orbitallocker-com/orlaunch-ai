@@ -4,7 +4,7 @@ from rag.ingestion.chunk import chunk_documents_by_category
 
 
 # ---------------------------------------------------------------------------
-# TechPort 
+# TechPort - no changes to be made
 # ---------------------------------------------------------------------------
 
 def fetch_techport_documents(techport_limit: int | None = 50) -> list[dict]:
@@ -39,7 +39,7 @@ def fetch_techport_documents(techport_limit: int | None = 50) -> list[dict]:
 
 def fetch_sec_documents() -> list[dict]:
     """
-    PLACEHOLDER — Ajay to complete.
+    PLACEHOLDER 
 
     Should call fetch_all_financial_benchmarks() from sec_edgar.py, once that
     file's documents are keyed "id" instead of "source_id".
@@ -53,8 +53,7 @@ def fetch_sec_documents() -> list[dict]:
 
 def fetch_patent_documents() -> list[dict]:
     """
-    PLACEHOLDER — Ajay to complete.
-
+    PLACEHOLDER 
     Should call fetch_all_space_patents() from patents.py, once that file's
     documents are keyed "id" instead of "source_id".
 
@@ -66,7 +65,7 @@ def fetch_patent_documents() -> list[dict]:
 
 def fetch_market_documents() -> list[dict]:
     """
-    PLACEHOLDER — Ajay to complete.
+    PLACEHOLDER 
 
     Should call fetch_all_market_news() from rss_market.py, once that file's
     documents are keyed "id" instead of "source_id" with a stable id (not
@@ -80,7 +79,7 @@ def fetch_market_documents() -> list[dict]:
 
 # ---------------------------------------------------------------------------
 # Orchestration — done. Loops over all 4 sources uniformly; placeholders
-# above will print a caught error until Ajay completes them.
+# above will print a caught error until completed
 # ---------------------------------------------------------------------------
 
 def collect_all_raw_documents(techport_limit: int | None = 50) -> list[dict]:
@@ -166,7 +165,7 @@ def run_ingestion_pipeline_all(techport_limit: int | None = 50) -> None:
        collect_all_raw_documents() actually returns SEC/patent/RSS
        documents, not just TechPort's.
 
-    2. DONE — batch.py and embed_and_store.py::store_chunks() have been
+    2. This is DONE — batch.py and embed_and_store.py::store_chunks() have been
        generalized to key chunks by "id" instead of "project_id" (matching
        chunk_documents_by_category()'s output), so run_batch_embedding()
        can now be called directly on chunks from any source, TechPort
