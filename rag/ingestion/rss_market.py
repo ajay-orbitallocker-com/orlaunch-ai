@@ -1,21 +1,18 @@
 import requests
-from bs4 import BeautifulSoup
+import hashlib
 import xml.etree.ElementTree as ET
-
-RSS_FEEDS = [
-    {"name": "SpaceNews", "url": "https://spacenews.com/feed/"},
-    {"name": "Payload Space", "url": "https://payloadspace.com/feed/"}
-]
+from rag.ingestion.config import RSS_FEEDS, USER_AGENT
+from rag.ingestion.utils import strip_html, build_document_text
 
 MARKET_REPAIR_KEYWORDS = [
     "servicing", "repair", "debris", "docking", "rpo", "osam",
     "robotics", "astroscale", "clearspace", "spacelogistics",
-    "northrop", "life extension", "orbit", "refueling", "payload", "satellite"
+    "northrop", "life extension", "refueling", "in-space servicing"
 ]
 
-def fetch_rss_feed(feed_info: dict, max_items: int = 15) -> list[dict]:
+def fetch_rss_feed(feed_info: dict, max_items: int = 10) -> list[dict]:
     """Fetch and parse space industry news items from RSS feeds matching repair droid focus."""
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+    headers = {"User-Agent": USER_AGENT}
     items = []
     
     try:
@@ -30,15 +27,25 @@ def fetch_rss_feed(feed_info: dict, max_items: int = 15) -> list[dict]:
                     pub_date = elem.findtext("pubDate", "")
                     description_raw = elem.findtext("description", "")
                     
-                    clean_desc = BeautifulSoup(description_raw, "html.parser").get_text(strip=True) if description_raw else ""
+                    clean_desc = strip_html(description_raw) if description_raw else ""
                     combined = f"{title} {clean_desc}".lower()
                     
                     # Filter for relevant servicing / satellite market news
                     if any(kw in combined for kw in MARKET_REPAIR_KEYWORDS):
                         if title and (clean_desc or link):
-                            doc_text = f"Title: {title}\nSource: {feed_info['name']} News\nCategory: Market Intelligence & Sector Trends\nDate: {pub_date}\nSummary: {clean_desc}"
+                            stable_id = f"NEWS_{hashlib.sha256(link.encode('utf-8')).hexdigest()[:12]}"
+                            fields = {
+                                "Publication Date": pub_date,
+                                "Summary": clean_desc
+                            }
+                            doc_text = build_document_text(
+                                title=title,
+                                category="Market Intelligence & Sector Trends",
+                                source=f"{feed_info['name']} News",
+                                fields=fields
+                            )
                             items.append({
-                                "source_id": f"NEWS_{hash(link)}",
+                                "id": stable_id,
                                 "title": title,
                                 "text": doc_text,
                                 "category": "Market Intelligence",

@@ -1,16 +1,7 @@
 import requests
 import json
-
-USPTO_API_URL = "https://api.patentsview.org/patents/query"
-
-DEFAULT_SEARCH_KEYWORDS = [
-    "satellite servicing",
-    "satellite refueling",
-    "space robotic arm",
-    "autonomous docking",
-    "orbital rendezvous",
-    "debris removal"
-]
+from rag.ingestion.config import USPTO_API_URL, DEFAULT_SEARCH_KEYWORDS, USER_AGENT
+from rag.ingestion.utils import build_document_text
 
 CURATED_SERVICING_PATENTS = [
     {
@@ -44,7 +35,7 @@ def fetch_patents_by_keyword(keyword: str, limit: int = 10) -> list[dict]:
     query = {"_text_any": {"patent_title": keyword}}
     fields = ["patent_number", "patent_title", "patent_date", "patent_abstract"]
     options = {"per_page": limit}
-    headers = {"User-Agent": "OrbitalLocker/1.0 (ajaykumaravula999@gmail.com)"}
+    headers = {"User-Agent": USER_AGENT}
     
     try:
         response = requests.post(
@@ -62,21 +53,24 @@ def fetch_patents_by_keyword(keyword: str, limit: int = 10) -> list[dict]:
     return []
 
 def build_patent_document_text(patent: dict) -> str:
-    """Format patent details into structured document text for embeddings."""
+    """Format patent details into structured document text for embeddings using shared helper."""
     title = patent.get("patent_title", "Space Technology Patent")
     p_num = patent.get("patent_number", "N/A")
     date = patent.get("patent_date", "N/A")
     abstract = patent.get("patent_abstract", "No abstract available.")
     
-    lines = [
-        f"Title: Patent US{p_num} - {title}",
-        f"Patent Number: US{p_num}",
-        f"Issue Date: {date}",
-        "Category: Patents & Prior Art",
-        "Subsystem Focus: Aerospace & Orbital Mechanics",
-        f"Abstract: {abstract}"
-    ]
-    return "\n".join(lines)
+    fields = {
+        "Patent Number": f"US{p_num}",
+        "Issue Date": date,
+        "Subsystem Focus": "Aerospace & Orbital Mechanics",
+        "Abstract": abstract
+    }
+    return build_document_text(
+        title=f"Patent US{p_num} - {title}",
+        category="Patents & Prior Art",
+        source="USPTO PatentsView",
+        fields=fields
+    )
 
 def fetch_all_space_patents() -> list[dict]:
     """Fetch space patents across default aerospace keywords or fallback to curated servicing patents."""
@@ -91,7 +85,7 @@ def fetch_all_space_patents() -> list[dict]:
                 seen_ids.add(p_id)
                 doc_text = build_patent_document_text(p)
                 results.append({
-                    "source_id": f"PATENT_{p_id}",
+                    "id": f"PATENT_{p_id}",
                     "title": f"Patent US{p_id}: {p.get('patent_title', '')}",
                     "text": doc_text,
                     "category": "Patents & IP",
@@ -104,7 +98,7 @@ def fetch_all_space_patents() -> list[dict]:
             p_id = p.get("patent_number")
             doc_text = build_patent_document_text(p)
             results.append({
-                "source_id": f"PATENT_{p_id}",
+                "id": f"PATENT_{p_id}",
                 "title": f"Patent US{p_id}: {p.get('patent_title', '')}",
                 "text": doc_text,
                 "category": "Patents & IP",

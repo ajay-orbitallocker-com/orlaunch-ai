@@ -1,23 +1,6 @@
-import requests
-from bs4 import BeautifulSoup
-
+from rag.ingestion.utils import strip_html
 
 TECHPORT_BASE_URL = "https://techport.nasa.gov/api"
-
-
-def fetch_project(project_id : int) -> dict:
-    """GET /api/projects/{id}, return the raw project dict."""
-    response = requests.get(f"{TECHPORT_BASE_URL}/projects/{project_id}")
-    response.raise_for_status()
-    return response.json()
-
-def strip_html(text : str) ->str:
-    """Minimal HTML-to-text cleanup for description/benefits fields."""
-
-    if not text:
-        return ""
-    
-    return  BeautifulSoup(text , "html.parser").get_text(separator = " " , strip = True)
 
 def _build_document_lines(title, trl_begin, trl_current, trl_end, description, benefits) -> str:
     """

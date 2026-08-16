@@ -1,16 +1,8 @@
 import requests
 import json
+from rag.ingestion.config import SEC_HEADERS, SPACE_BENCHMARKS
+from rag.ingestion.utils import build_document_text
 
-SEC_HEADERS = {
-    "User-Agent": "OrbitalLocker/1.0 (ajaykumaravula999@gmail.com)"
-}
-
-SPACE_BENCHMARKS = [
-    {"name": "Northrop Grumman Corp", "cik": "0000072971", "symbol": "NOC"},
-    {"name": "Lockheed Martin Corp", "cik": "0000936468", "symbol": "LMT"},
-    {"name": "Rocket Lab USA Inc", "cik": "0001819974", "symbol": "RKLB"},
-    {"name": "Planet Labs PBC", "cik": "0001836833", "symbol": "PL"}
-]
 
 def fetch_sec_company_facts(cik: str) -> dict:
     """Fetch company facts from SEC EDGAR API."""
@@ -55,27 +47,31 @@ def extract_financial_summary(company_info: dict, cik: str) -> dict:
     return extracted
 
 def build_sec_document_text(financial_data: dict) -> str:
-    """Format extracted financial data into clean text for vector embeddings."""
-    lines = [
-        f"Company: {financial_data['company']} (Ticker: {financial_data['symbol']})",
-        "Category: Financial Intelligence & Sector Benchmarks",
-        "Source: SEC EDGAR 10-K/10-Q Public Filings",
-        "Financial Highlights:"
-    ]
+    """Format extracted financial data into clean text for vector embeddings using shared helper."""
+    metric_lines = []
     for m_key, m_val in financial_data.get("metrics", {}).items():
-        lines.append(f" - {m_val['label']} ({m_val.get('fy', 'N/A')}): ${m_val['val']:,} USD [Form {m_val.get('form', '10-K')}]")
-        
-    return "\n".join(lines)
+        metric_lines.append(f" - {m_val['label']} ({m_val.get('fy', 'N/A')}): ${m_val['val']:,} USD [Form {m_val.get('form', '10-K')}]")
+    
+    fields = {
+        "Company": f"{financial_data['company']} (Ticker: {financial_data['symbol']})",
+        "Financial Highlights": "\n".join(metric_lines) if metric_lines else "N/A"
+    }
+    return build_document_text(
+        title=f"Financial Benchmark: {financial_data['company']} ({financial_data['symbol']})",
+        category="Financial Intelligence",
+        source="SEC EDGAR 10-K/10-Q Public Filings",
+        fields=fields
+    )
 
 def fetch_all_financial_benchmarks() -> list[dict]:
-    """Fetch financial benchmarks for all space companies."""
+    """Fetch financial benchmarks for space companies."""
     results = []
     for comp in SPACE_BENCHMARKS:
         try:
             summary = extract_financial_summary(comp, comp["cik"])
             doc_text = build_sec_document_text(summary)
             results.append({
-                "source_id": f"SEC_{comp['cik']}",
+                "id": f"SEC_{comp['cik']}",
                 "title": f"Financial Benchmark: {comp['name']} ({comp['symbol']})",
                 "text": doc_text,
                 "category": "Financial Intelligence",
