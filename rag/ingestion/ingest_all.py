@@ -5,6 +5,22 @@ from rag.ingestion.patents import fetch_all_space_patents
 from rag.ingestion.rss_market import fetch_all_market_news
 from rag.ingestion.chunk import chunk_text, chunk_document
 
+
+def fetch_sec_documents() -> list[dict]:
+    """Fetch financial benchmark documents from SEC EDGAR."""
+    return fetch_all_financial_benchmarks()
+
+
+def fetch_patent_documents() -> list[dict]:
+    """Fetch patent prior art documents from USPTO / database."""
+    return fetch_all_space_patents()
+
+
+def fetch_market_documents() -> list[dict]:
+    """Fetch market intelligence news documents from RSS feeds."""
+    return fetch_all_market_news()
+
+
 def collect_all_raw_documents(techport_limit: int | None = 50) -> list[dict]:
     """
     Aggregate documents from all 4 categories:
@@ -26,7 +42,7 @@ def collect_all_raw_documents(techport_limit: int | None = 50) -> list[dict]:
             text = build_project_document(p)
             p_id = p.get("projectId")
             all_docs.append({
-                "source_id": f"TECHPORT_{p_id}",
+                "id": f"TECHPORT_{p_id}",
                 "title": p.get("title", ""),
                 "text": text,
                 "category": "Technical & TRL",
@@ -39,17 +55,27 @@ def collect_all_raw_documents(techport_limit: int | None = 50) -> list[dict]:
 
     # 2. Financial Intelligence (SEC EDGAR)
     print("Fetching Financial Intelligence (SEC EDGAR)...")
-    all_docs.extend(fetch_all_financial_benchmarks())
+    try:
+        all_docs.extend(fetch_sec_documents())
+    except Exception as e:
+        print(f"Error collecting SEC financial documents: {e}")
 
     # 3. Patents & Prior Art (USPTO)
     print("Fetching Patents & Prior Art (USPTO)...")
-    all_docs.extend(fetch_all_space_patents())
+    try:
+        all_docs.extend(fetch_patent_documents())
+    except Exception as e:
+        print(f"Error collecting patent documents: {e}")
 
     # 4. Market Intelligence (RSS News)
     print("Fetching Market Intelligence (RSS)...")
-    all_docs.extend(fetch_all_market_news())
+    try:
+        all_docs.extend(fetch_market_documents())
+    except Exception as e:
+        print(f"Error collecting market news: {e}")
 
     return all_docs
+
 
 def prepare_all_chunks(techport_limit: int | None = 50) -> list[dict]:
     """Chunk all aggregated documents into 500-token windows."""
@@ -57,12 +83,13 @@ def prepare_all_chunks(techport_limit: int | None = 50) -> list[dict]:
     all_chunks = []
     
     for doc in docs:
+        doc_id = doc.get("id", doc.get("source_id", "doc"))
         text = doc["text"]
         chunks = chunk_text(text)
         for i, chunk in enumerate(chunks):
             all_chunks.append({
-                "chunk_id": f"{doc['source_id']}_{i}",
-                "source_id": doc["source_id"],
+                "chunk_id": f"{doc_id}_{i}",
+                "id": doc_id,
                 "chunk_index": i,
                 "text": chunk,
                 "title": doc.get("title", ""),
@@ -75,6 +102,8 @@ def prepare_all_chunks(techport_limit: int | None = 50) -> list[dict]:
     print(f"Total aggregated chunks across all data sources: {len(all_chunks)}")
     return all_chunks
 
+
 if __name__ == "__main__":
     chunks = prepare_all_chunks(techport_limit=10)
     print(f"Sample Chunk Output:\n", chunks[0] if chunks else "No chunks generated.")
+
