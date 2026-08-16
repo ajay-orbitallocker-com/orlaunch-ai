@@ -1,13 +1,18 @@
 from config import client, EMBEDDING_MODEL, collection
-import json
+from rag.embeddings.batch import generate_local_embedding
+
 
 def get_text_embedding(text: str) -> list[float]:
-    """Generate embedding vector using OpenAI text-embedding-3-small."""
-    response = client.embeddings.create(
-        input=text,
-        model=EMBEDDING_MODEL
-    )
-    return response.data[0].embedding
+    """Generate embedding vector using OpenAI text-embedding-3-small or fallback vector."""
+    try:
+        response = client.embeddings.create(
+            input=text,
+            model=EMBEDDING_MODEL
+        )
+        return response.data[0].embedding
+    except Exception as e:
+        print(f"OpenAI API notice ({e}). Using test vector embedding...")
+        return generate_local_embedding(text)
 
 def retrieve_top_k_documents(query_text: str, top_k: int = 5, category_filter: str | None = None) -> list[dict]:
     """
