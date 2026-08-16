@@ -1,12 +1,7 @@
 import requests
 import json
 
-
-TECHPORT_BASE_URL = "https://techport.nasa.gov/api"
-
-UPDATED_SINCE = "2025-01-01"
-
-CANDIDATE_TX_PREFIXES = ("TX01", "TX04", "TX10", "TX17")
+from rag.ingestion.config import TECHPORT_BASE_URL, UPDATED_SINCE, CANDIDATE_TX_PREFIXES
 
 def fetch_all_projects() -> list[dict]:
     """GET /api/projects/search, return the list of result records."""

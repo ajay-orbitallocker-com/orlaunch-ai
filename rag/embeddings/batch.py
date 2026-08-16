@@ -12,7 +12,7 @@ def build_batch_file(chunks : list[dict],filepath : str) -> None:
     """
     with open(filepath , "w" , encoding="utf-8") as f:
         for chunk in chunks :
-            custom_id = f"{chunk['project_id']}_{chunk['chunk_index']}"
+            custom_id = f"{chunk['id']}_{chunk['chunk_index']}"
             request = {
                 
                 "custom_id" : custom_id,
@@ -106,9 +106,9 @@ def merge_embeddings(chunks : list[dict] , embeddings_by_id : dict[str , list[fl
     embedded = []
     skipped = 0
 
-    for chunk in chunks : 
+    for chunk in chunks :
 
-        custom_id = f"{chunk['project_id']}_{chunk['chunk_index']}"
+        custom_id = f"{chunk['id']}_{chunk['chunk_index']}"
         if custom_id in failed_ids or custom_id not in embeddings_by_id:
 
             skipped += 1

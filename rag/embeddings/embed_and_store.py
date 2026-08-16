@@ -1,6 +1,7 @@
 from rag.ingestion.fetch_all_projects import fetch_all_projects
 from rag.ingestion.fetch_all_projects import filter_candidates
 from rag.ingestion.chunk import chunk_projects
+from rag.ingestion.techport import build_project_url
 from rag.embeddings.batch import run_batch_embedding
 
 from config import client, EMBEDDING_MODEL, chromadb, chroma_client, CHROMA_PATH, collection, COLLECTION_NAME
@@ -14,9 +15,9 @@ def build_metdata(project : dict) -> dict:
     metadata = {
         "project_id" : project_id,
         "title" : project.get("title" , ""),
-        "primary_tx_code" : (project.get("primaryTx") or {}).get("code" , ""),
-        "url" : f"https://techport.nasa.gov/view/{project_id}",        
-     
+        "category" : "Technical & TRL",
+        "url" : build_project_url(project_id),
+
     }
     trl_current = project.get("trlCurrent")
     if trl_current is not None:
@@ -27,7 +28,7 @@ def build_metdata(project : dict) -> dict:
 def store_chunks(embedded_chunks : list[dict] , projects : list[dict]) -> None:
     """
       Write embedded chunks into ChromaDB, attaching each chunk's
-      project metadata (looked up by project_id).
+      project metadata (looked up by chunk["id"], the TechPort project id).
     """
     project_by_id = {p.get("projectId"): p for p in projects}
 
@@ -39,10 +40,10 @@ def store_chunks(embedded_chunks : list[dict] , projects : list[dict]) -> None:
     for chunk in embedded_chunks :
       
       # get chunk of each project
-      project = project_by_id.get(chunk["project_id"])
+      project = project_by_id.get(chunk["id"])
       metadata = build_metdata(project)
 
-      ids.append(f"{chunk['project_id']}_{chunk['chunk_index']}")
+      ids.append(f"{chunk['id']}_{chunk['chunk_index']}")
       embeddings.append(chunk["embedding"])
       documents.append(chunk["text"])
       metadatas.append(metadata)
