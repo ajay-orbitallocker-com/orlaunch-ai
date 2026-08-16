@@ -7,7 +7,7 @@ def build_metadata(chunk: dict) -> dict:
     """Extract metadata fields from a standardized chunk dict."""
     metadata = {
         "chunk_id": str(chunk.get("chunk_id", "")),
-        "source_id": str(chunk.get("source_id", "")),
+        "id": str(chunk.get("id", chunk.get("source_id", ""))),
         "title": str(chunk.get("title", "")),
         "category": str(chunk.get("category", "General")),
         "source": str(chunk.get("source", "Unknown")),
