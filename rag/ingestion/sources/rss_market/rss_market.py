@@ -15,6 +15,7 @@ def fetch_rss_feed(feed_info: dict, max_items: int = 10) -> list[dict]:
     """Fetch and parse space industry news items from RSS feeds matching repair droid focus."""
     headers = {"User-Agent": USER_AGENT}
     items = []
+    all_parsed_items = []
 
     try:
         response = requests.get(feed_info["url"], headers=headers, timeout=10)
@@ -31,30 +32,38 @@ def fetch_rss_feed(feed_info: dict, max_items: int = 10) -> list[dict]:
                     clean_desc = strip_html(description_raw) if description_raw else ""
                     combined = f"{title} {clean_desc}".lower()
 
-                    # Filter for relevant servicing / satellite market news
-                    if any(kw in combined for kw in MARKET_REPAIR_KEYWORDS):
-                        if title and (clean_desc or link):
-                            stable_id = f"NEWS_{hashlib.sha256(link.encode('utf-8')).hexdigest()[:12]}"
-                            lines = [
-                                format_field_line("Title", title),
-                                format_field_line("Source", f"{feed_info['name']} News"),
-                                format_field_line("Category", "Market Intelligence & Sector Trends"),
-                                format_field_line("Publication Date", pub_date),
-                                format_field_line("Summary", clean_desc)
-                            ]
-                            lines = [line for line in lines if line is not None]
-                            doc_text = build_document_text(lines)
+                    if title and (clean_desc or link):
+                        stable_id = f"NEWS_{hashlib.sha256(link.encode('utf-8')).hexdigest()[:12]}"
+                        lines = [
+                            format_field_line("Title", title),
+                            format_field_line("Source", f"{feed_info['name']} News"),
+                            format_field_line("Category", "Market Intelligence & Sector Trends"),
+                            format_field_line("Publication Date", pub_date),
+                            format_field_line("Summary", clean_desc)
+                        ]
+                        lines = [line for line in lines if line is not None]
+                        doc_text = build_document_text(lines)
 
-                            items.append({
-                                "id": stable_id,
-                                "title": title,
-                                "text": doc_text,
-                                "category": "Market Intelligence",
-                                "source": feed_info["name"],
-                                "url": link
-                            })
+                        item_dict = {
+                            "id": stable_id,
+                            "title": title,
+                            "text": doc_text,
+                            "category": "Market Intelligence",
+                            "source": feed_info["name"],
+                            "url": link
+                        }
+                        all_parsed_items.append(item_dict)
+
+                        # Filter for relevant servicing / satellite market news
+                        if any(kw in combined for kw in MARKET_REPAIR_KEYWORDS):
+                            items.append(item_dict)
                             if len(items) >= max_items:
                                 break
+
+        # Fallback: if no articles match niche keywords in current feed batch, return top market news
+        if not items and all_parsed_items:
+            items = all_parsed_items[:max_items]
+
     except Exception as e:
         print(f"Error fetching RSS feed {feed_info['name']}: {e}")
 
