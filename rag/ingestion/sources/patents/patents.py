@@ -1,6 +1,7 @@
 import requests
 import json
-from rag.ingestion.config import USPTO_API_URL, DEFAULT_SEARCH_KEYWORDS, USER_AGENT
+from rag.ingestion.config import USER_AGENT
+from rag.ingestion.sources.patents.config import USPTO_API_URL, DEFAULT_SEARCH_KEYWORDS
 from rag.ingestion.utils import format_field_line, build_document_text
 
 CURATED_SERVICING_PATENTS = [
@@ -36,7 +37,7 @@ def fetch_patents_by_keyword(keyword: str, limit: int = 10) -> list[dict]:
     fields = ["patent_number", "patent_title", "patent_date", "patent_abstract"]
     options = {"per_page": limit}
     headers = {"User-Agent": USER_AGENT}
-    
+
     try:
         response = requests.post(
             USPTO_API_URL,
@@ -49,7 +50,7 @@ def fetch_patents_by_keyword(keyword: str, limit: int = 10) -> list[dict]:
             return data.get("patents", [])
     except Exception as e:
         print(f"USPTO API query notice for '{keyword}': {e}")
-        
+
     return []
 
 def build_patent_document_text(patent: dict) -> str:
@@ -58,7 +59,7 @@ def build_patent_document_text(patent: dict) -> str:
     p_num = patent.get("patent_number", "N/A")
     date = patent.get("patent_date", "N/A")
     abstract = patent.get("patent_abstract", "No abstract available.")
-    
+
     lines = [
         format_field_line("Title", f"Patent US{p_num} - {title}"),
         format_field_line("Patent Number", f"US{p_num}"),
@@ -74,7 +75,7 @@ def fetch_all_space_patents() -> list[dict]:
     """Fetch space patents across default aerospace keywords or fallback to curated servicing patents."""
     results = []
     seen_ids = set()
-    
+
     for kw in DEFAULT_SEARCH_KEYWORDS:
         patents = fetch_patents_by_keyword(kw, limit=5)
         for p in patents:

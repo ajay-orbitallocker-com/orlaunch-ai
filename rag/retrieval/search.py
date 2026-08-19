@@ -1,4 +1,4 @@
-from config import client, EMBEDDING_MODEL, collection
+from chroma_config import client, EMBEDDING_MODEL, collection
 from rag.embeddings.batch import generate_local_embedding
 
 

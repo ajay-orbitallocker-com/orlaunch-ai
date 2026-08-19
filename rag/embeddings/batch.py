@@ -1,7 +1,7 @@
 import json
 import time
 
-from config import client, EMBEDDING_MODEL
+from chroma_config import client, EMBEDDING_MODEL
 
 
 def build_batch_file(chunks : list[dict],filepath : str) -> None:

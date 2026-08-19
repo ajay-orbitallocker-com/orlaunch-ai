@@ -1,6 +1,5 @@
 from functools import partial
 
-from rag.ingestion.techport import build_project_from_scratch, build_project_url
 from rag.ingestion.config import ENCODING, CHUNK_SIZE, CHUNK_OVERLAP
 
 def chunk_text(text : str, chunk_size : int = CHUNK_SIZE, chunk_overlap : int = CHUNK_OVERLAP) -> list[str]:
@@ -127,32 +126,3 @@ def chunk_documents_by_category(documents : list[dict]) -> list[dict]:
         all_chunks.extend(chunk_documents(docs, splitter=bound_splitter))
 
     return all_chunks
-
-
-def chunk_projects(projects : list[dict]) -> list[dict]:
-    """
-        Take filtered /search items, build each project's text block,
-        chunk it, and return one dict per chunk:
-        {"id":..., "chunk_index":..., "text":...}.
-
-        Thin TechPort-specific adapter over chunk_documents_by_category() —
-        just normalizes raw project dicts into the generic document shape
-        chunk_documents_by_category() expects. Chunks stay keyed "id"
-        (the TechPort project id), matching every other source's
-        convention — embed_and_store.py and batch.py read chunk["id"].
-    """
-    documents = []
-    for project in projects:
-        project_id = project.get("projectId")
-        documents.append({
-            "id" : project_id,
-            "text" : build_project_from_scratch(project),
-            "title" : project.get("title" , ""),
-            "category" : (project.get("primaryTx") or {}).get("code" , ""),
-            "trl_current" : project.get("trlCurrent"),
-            "url" : build_project_url(project_id),
-        })
-
-    chunks = chunk_documents_by_category(documents)
-
-    return chunks

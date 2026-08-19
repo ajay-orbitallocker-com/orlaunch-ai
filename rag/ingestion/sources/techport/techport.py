@@ -1,7 +1,39 @@
 import requests
 
 from rag.ingestion.utils import strip_html, format_field_line, build_document_text
-from rag.ingestion.config import TECHPORT_BASE_URL, TECHPORT_VIEW_URL
+from rag.ingestion.config import USER_AGENT
+from rag.ingestion.sources.techport.config import (
+    TECHPORT_BASE_URL, TECHPORT_VIEW_URL, UPDATED_SINCE, CANDIDATE_TX_PREFIXES
+)
+
+
+def fetch_all_projects() -> list[dict]:
+    """GET /api/projects/search, return the list of result records."""
+
+    response = requests.get (f"{TECHPORT_BASE_URL}/projects/search",
+            params={'updatedSince' : UPDATED_SINCE},
+             headers={"User-Agent": USER_AGENT})
+    response.raise_for_status()
+    data = response.json()
+    return data["results"]
+
+def filter_candidates(projects : list[dict]) -> list[dict]:
+
+    matches = []
+    for project in projects:
+
+        description = (project.get("description") or "").lower()
+        benefits = (project.get("benefits") or "").lower()
+        if not (description or benefits):
+            continue
+
+
+        primary_code = (project.get("primaryTx") or {}).get("code" , "") or ""
+        if primary_code.startswith(CANDIDATE_TX_PREFIXES):
+            matches.append(project)
+
+
+    return matches
 
 
 def build_project_url(project_id) -> str:
@@ -11,7 +43,7 @@ def build_project_url(project_id) -> str:
 
 def fetch_project(project_id : int) -> dict:
     """GET /api/projects/{id}, return the raw project dict."""
-    response = requests.get(f"{TECHPORT_BASE_URL}/projects/{project_id}")
+    response = requests.get(f"{TECHPORT_BASE_URL}/projects/{project_id}", headers={"User-Agent": USER_AGENT})
     response.raise_for_status()
     return response.json()
 

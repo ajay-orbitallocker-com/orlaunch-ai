@@ -1,7 +1,8 @@
 import requests
 import hashlib
 import xml.etree.ElementTree as ET
-from rag.ingestion.config import RSS_FEEDS, USER_AGENT
+from rag.ingestion.config import USER_AGENT
+from rag.ingestion.sources.rss_market.config import RSS_FEEDS
 from rag.ingestion.utils import strip_html, format_field_line, build_document_text
 
 MARKET_REPAIR_KEYWORDS = [
@@ -14,7 +15,7 @@ def fetch_rss_feed(feed_info: dict, max_items: int = 10) -> list[dict]:
     """Fetch and parse space industry news items from RSS feeds matching repair droid focus."""
     headers = {"User-Agent": USER_AGENT}
     items = []
-    
+
     try:
         response = requests.get(feed_info["url"], headers=headers, timeout=10)
         if response.status_code == 200:
@@ -26,10 +27,10 @@ def fetch_rss_feed(feed_info: dict, max_items: int = 10) -> list[dict]:
                     link = elem.findtext("link", "")
                     pub_date = elem.findtext("pubDate", "")
                     description_raw = elem.findtext("description", "")
-                    
+
                     clean_desc = strip_html(description_raw) if description_raw else ""
                     combined = f"{title} {clean_desc}".lower()
-                    
+
                     # Filter for relevant servicing / satellite market news
                     if any(kw in combined for kw in MARKET_REPAIR_KEYWORDS):
                         if title and (clean_desc or link):
@@ -43,7 +44,7 @@ def fetch_rss_feed(feed_info: dict, max_items: int = 10) -> list[dict]:
                             ]
                             lines = [line for line in lines if line is not None]
                             doc_text = build_document_text(lines)
-                            
+
                             items.append({
                                 "id": stable_id,
                                 "title": title,
@@ -56,7 +57,7 @@ def fetch_rss_feed(feed_info: dict, max_items: int = 10) -> list[dict]:
                                 break
     except Exception as e:
         print(f"Error fetching RSS feed {feed_info['name']}: {e}")
-        
+
     return items
 
 def fetch_all_market_news() -> list[dict]:

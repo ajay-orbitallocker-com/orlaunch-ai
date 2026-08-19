@@ -1,6 +1,6 @@
 import requests
 import json
-from rag.ingestion.config import SEC_HEADERS, SPACE_BENCHMARKS
+from rag.ingestion.sources.sec_edgar.config import SEC_HEADERS, SPACE_BENCHMARKS
 from rag.ingestion.utils import format_field_line, build_document_text
 
 
@@ -16,19 +16,19 @@ def extract_financial_summary(company_info: dict, cik: str) -> dict:
     raw_data = fetch_sec_company_facts(cik)
     entity_name = raw_data.get("entityName", company_info["name"])
     gaap_facts = raw_data.get("facts", {}).get("us-gaap", {})
-    
+
     extracted = {
         "company": entity_name,
         "symbol": company_info["symbol"],
         "cik": cik,
         "metrics": {}
     }
-    
+
     target_metrics = [
         "Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax",
         "ResearchAndDevelopmentExpense", "GrossProfit", "NetIncomeLoss"
     ]
-    
+
     for metric_key in target_metrics:
         if metric_key in gaap_facts:
             metric_data = gaap_facts[metric_key]
@@ -43,7 +43,7 @@ def extract_financial_summary(company_info: dict, cik: str) -> dict:
                         "form": recent.get("form")
                     }
                     break
-                    
+
     return extracted
 
 def build_sec_document_text(financial_data: dict) -> str:
@@ -55,10 +55,10 @@ def build_sec_document_text(financial_data: dict) -> str:
         "Financial Highlights:"
     ]
     lines = [line for line in lines if line is not None]
-    
+
     for m_key, m_val in financial_data.get("metrics", {}).items():
         lines.append(f" - {m_val['label']} ({m_val.get('fy', 'N/A')}): ${m_val['val']:,} USD [Form {m_val.get('form', '10-K')}]")
-        
+
     return build_document_text(lines)
 
 def fetch_all_financial_benchmarks() -> list[dict]:
