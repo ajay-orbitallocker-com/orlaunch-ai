@@ -5,7 +5,11 @@ import chromadb
 
 load_dotenv()
 
-client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+client = OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+    organization=os.getenv("OPENAI_ORG_ID") or None,
+    project=os.getenv("OPENAI_PROJECT_ID") or None
+)
 EMBEDDING_MODEL = "text-embedding-3-small"
 
 CHROMA_PATH = "src/data/chromadb"
