@@ -1,0 +1,2 @@
+GENERATION_MODEL = "gpt-5.4-mini"
+GENERATION_TOP_K = 5
