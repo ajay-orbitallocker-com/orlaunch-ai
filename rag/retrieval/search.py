@@ -9,32 +9,41 @@ def get_text_embedding(text: str) -> list[float]:
     )
     return response.data[0].embedding
 
-def retrieve_top_k_documents(query_text: str, top_k: int = 5, category_filter: str | None = None) -> list[dict]:
-    """
-    Perform cosine similarity search against ChromaDB.
-    Returns top-K matching document chunks with metadata and similarity scores.
+def _query_top_k_documents(query_text: str, top_k: int, category_filter: str | None) -> list[dict]:
+    """Runs the ChromaDB cosine similarity query and builds the document dict list.
+
+    Args:
+        query_text: The text to embed and search with.
+        top_k: How many results to return.
+        category_filter: If given, restricts results to this category.
+
+    Returns:
+        A list of dicts, one per matched chunk: {"id", "title", "category",
+        "trl_current", "url", "similarity_score", "text"}, ranked by
+        similarity (highest first).
     """
     query_vector = get_text_embedding(query_text)
-    
+
     where_clause = {"category": category_filter} if category_filter else None
-    
+
     results = collection.query(
         query_embeddings=[query_vector],
         n_results=top_k,
         where=where_clause,
         include=["documents", "metadatas", "distances"]
     )
-    
+
     retrieved = []
     if results and "documents" in results and results["documents"]:
         docs = results["documents"][0]
         metas = results["metadatas"][0] if "metadatas" in results else [{}] * len(docs)
         dists = results["distances"][0] if "distances" in results else [0.0] * len(docs)
-        
+
         for doc, meta, dist in zip(docs, metas, dists):
             # Cosine distance to similarity score: similarity = 1 - distance
             similarity_score = round(max(0.0, 1.0 - dist), 4)
             retrieved.append({
+                "id": meta.get("id"),
                 "title": meta.get("title", "Untitled Document"),
                 "category": meta.get("category", "General"),
                 "trl_current": meta.get("trl_current"),
@@ -42,8 +51,36 @@ def retrieve_top_k_documents(query_text: str, top_k: int = 5, category_filter: s
                 "similarity_score": similarity_score,
                 "text": doc
             })
-            
+
     return retrieved
+
+
+def retrieve_top_k_documents(query_text: str, top_k: int = 5, category_filter: str | None = None) -> list[dict]:
+    """
+    Perform cosine similarity search against ChromaDB.
+    Returns top-K matching document chunks with metadata and similarity scores.
+    """
+    return _query_top_k_documents(query_text, top_k, category_filter)
+
+
+def retrieve_top_k_documents_with_status(query_text: str, top_k: int = 5, category_filter: str | None = None) -> dict:
+    """Runs the same retrieval as retrieve_top_k_documents(), plus retrieval status.
+
+    Args:
+        query_text: The text to embed and search with.
+        top_k: How many results to return.
+        category_filter: If given, restricts results to this category.
+
+    Returns:
+        A dict with keys "documents" (see retrieve_top_k_documents()) and
+        "embedding_fallback_used". The embedding step has no fallback path
+        (get_text_embedding() raises on failure rather than degrading), so
+        "embedding_fallback_used" is always False; it's kept as a field so
+        callers built against it don't need special-casing if a fallback
+        is reintroduced later.
+    """
+    documents = _query_top_k_documents(query_text, top_k, category_filter)
+    return {"documents": documents, "embedding_fallback_used": False}
 
 def build_context_package(query_text: str, top_k: int = 5) -> dict:
     """

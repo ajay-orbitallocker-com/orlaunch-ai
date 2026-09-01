@@ -132,3 +132,23 @@ def run_batch_embedding(chunks: list[dict], filepath: str = "batch_input.jsonl")
     embeddings_by_id = retrieve_batch_results(output_file_id)
     failed_ids = retrieve_batch_error(error_file_id)
     return merge_embeddings(chunks, embeddings_by_id, failed_ids)
+
+
+def run_sync_embedding(chunks: list[dict]) -> list[dict]:
+    """
+    Embed chunks one at a time via the plain (non-batch) /v1/embeddings
+    endpoint. Use this instead of run_batch_embedding() for small sources
+    (dozens of chunks, not thousands)
+    """
+    embedded = []
+    skipped = 0
+    for chunk in chunks:
+        try:
+            response = client.embeddings.create(input=chunk["text"], model=EMBEDDING_MODEL)
+            embedded.append({**chunk, "embedding": response.data[0].embedding})
+        except Exception as e:
+            skipped += 1
+            print(f"Embedding failed for chunk {chunk['id']}_{chunk['chunk_index']}: {e}")
+    if skipped:
+        print(f"Skipped {skipped} chunks with no successful embedding")
+    return embedded

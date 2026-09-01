@@ -5,3 +5,4 @@ openai
 tiktoken
 beautifulsoup4
 tenacity
+fpdf2
