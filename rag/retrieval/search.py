@@ -9,22 +9,40 @@ def get_text_embedding(text: str) -> list[float]:
     )
     return response.data[0].embedding
 
-def _query_top_k_documents(query_text: str, top_k: int, category_filter: str | None) -> list[dict]:
+def _query_top_k_documents(
+    query_text: str,
+    top_k: int,
+    category_filter: str | None = None,
+    source_filter: str | None = None
+) -> list[dict]:
     """Runs the ChromaDB cosine similarity query and builds the document dict list.
 
     Args:
         query_text: The text to embed and search with.
         top_k: How many results to return.
         category_filter: If given, restricts results to this category.
+        source_filter: If given, restricts results to this source.
 
     Returns:
         A list of dicts, one per matched chunk: {"id", "title", "category",
-        "trl_current", "url", "similarity_score", "text"}, ranked by
+        "source", "trl_current", "url", "similarity_score", "text"}, ranked by
         similarity (highest first).
     """
     query_vector = get_text_embedding(query_text)
 
-    where_clause = {"category": category_filter} if category_filter else None
+    if category_filter and source_filter:
+        where_clause = {
+            "$and": [
+                {"category": category_filter},
+                {"source": source_filter}
+            ]
+        }
+    elif category_filter:
+        where_clause = {"category": category_filter}
+    elif source_filter:
+        where_clause = {"source": source_filter}
+    else:
+        where_clause = None
 
     results = collection.query(
         query_embeddings=[query_vector],
@@ -46,6 +64,7 @@ def _query_top_k_documents(query_text: str, top_k: int, category_filter: str | N
                 "id": meta.get("id"),
                 "title": meta.get("title", "Untitled Document"),
                 "category": meta.get("category", "General"),
+                "source": meta.get("source", ""),
                 "trl_current": meta.get("trl_current"),
                 "url": meta.get("url", ""),
                 "similarity_score": similarity_score,
@@ -55,21 +74,32 @@ def _query_top_k_documents(query_text: str, top_k: int, category_filter: str | N
     return retrieved
 
 
-def retrieve_top_k_documents(query_text: str, top_k: int = 5, category_filter: str | None = None) -> list[dict]:
+def retrieve_top_k_documents(
+    query_text: str,
+    top_k: int = 5,
+    category_filter: str | None = None,
+    source_filter: str | None = None
+) -> list[dict]:
     """
     Perform cosine similarity search against ChromaDB.
     Returns top-K matching document chunks with metadata and similarity scores.
     """
-    return _query_top_k_documents(query_text, top_k, category_filter)
+    return _query_top_k_documents(query_text, top_k, category_filter, source_filter)
 
 
-def retrieve_top_k_documents_with_status(query_text: str, top_k: int = 5, category_filter: str | None = None) -> dict:
+def retrieve_top_k_documents_with_status(
+    query_text: str,
+    top_k: int = 5,
+    category_filter: str | None = None,
+    source_filter: str | None = None
+) -> dict:
     """Runs the same retrieval as retrieve_top_k_documents(), plus retrieval status.
 
     Args:
         query_text: The text to embed and search with.
         top_k: How many results to return.
         category_filter: If given, restricts results to this category.
+        source_filter: If given, restricts results to this source.
 
     Returns:
         A dict with keys "documents" (see retrieve_top_k_documents()) and
@@ -79,25 +109,79 @@ def retrieve_top_k_documents_with_status(query_text: str, top_k: int = 5, catego
         callers built against it don't need special-casing if a fallback
         is reintroduced later.
     """
-    documents = _query_top_k_documents(query_text, top_k, category_filter)
+    documents = _query_top_k_documents(query_text, top_k, category_filter, source_filter)
     return {"documents": documents, "embedding_fallback_used": False}
 
-def build_context_package(query_text: str, top_k: int = 5) -> dict:
+
+ALL_RAG_CATEGORIES = [
+    "Technical & TRL",
+    "Financial Intelligence",
+    "Patents & IP",
+    "Market Intelligence",
+]
+
+
+def retrieve_multi_category_documents(
+    query_text: str,
+    per_category_k: int = 2,
+    categories: list[str] | None = None
+) -> dict[str, list[dict]]:
+    """Retrieve top-K matching documents across each specified category.
+
+    Guarantees that smaller categories (Financial, Patents, Market) are not
+    drowned out by large datasets (NASA TechPort).
+    """
+    target_categories = categories or ALL_RAG_CATEGORIES
+    results_by_cat = {}
+    for cat in target_categories:
+        results_by_cat[cat] = retrieve_top_k_documents(
+            query_text=query_text,
+            top_k=per_category_k,
+            category_filter=cat
+        )
+    return results_by_cat
+
+
+def build_context_package(
+    query_text: str,
+    top_k: int = 5,
+    per_category: bool = True,
+    categories: list[str] | None = None
+) -> dict:
     """
     Build the structured Context Package to pass directly to GPT-4o Mini:
-    Idea -> Similarity Search -> Top-K Docs -> Context Package
+    Idea -> Similarity Search -> Multi-Source Docs -> Context Package.
+
+    Args:
+        query_text: User venture idea or prompt.
+        top_k: Total or per-category top documents to retrieve.
+        per_category: If True, retrieves top matches per category so no
+            data source is omitted from the context. If False, performs
+            a single global cosine similarity search.
+        categories: List of categories to retrieve when per_category=True.
     """
-    documents = retrieve_top_k_documents(query_text, top_k=top_k)
-    
+    if per_category:
+        target_cats = categories or ALL_RAG_CATEGORIES
+        # allocate documents evenly across categories, at least 1 per category
+        per_cat_limit = max(1, top_k // len(target_cats)) if top_k >= len(target_cats) else 1
+        cat_map = retrieve_multi_category_documents(query_text, per_category_k=per_cat_limit, categories=target_cats)
+        
+        documents = []
+        for cat in target_cats:
+            documents.extend(cat_map.get(cat, []))
+    else:
+        documents = retrieve_top_k_documents(query_text, top_k=top_k)
+
     formatted_docs_text = []
     for idx, d in enumerate(documents, 1):
         trl_str = f" [TRL {d['trl_current']}]" if d.get("trl_current") is not None else ""
+        source_str = f" | Source: {d.get('source')}" if d.get("source") else ""
         formatted_docs_text.append(
             f"--- [Doc {idx}] {d['title']}{trl_str} (Relevance Score: {d['similarity_score']}) ---\n"
-            f"Category: {d['category']}\n"
+            f"Category: {d['category']}{source_str}\n"
             f"Content: {d['text']}\n"
         )
-        
+
     context_package = {
         "user_idea": query_text,
         "total_documents_retrieved": len(documents),
@@ -106,12 +190,13 @@ def build_context_package(query_text: str, top_k: int = 5) -> dict:
     }
     return context_package
 
+
 if __name__ == "__main__":
     sample_idea = "A startup developing low-cost electric propulsion for CubeSat orbit maneuvering"
     print(f"Testing Retrieval Workflow for Idea: '{sample_idea}'")
     try:
-        pkg = build_context_package(sample_idea, top_k=3)
-        print(f"\nRetrieved {pkg['total_documents_retrieved']} relevant documents.")
+        pkg = build_context_package(sample_idea, top_k=4, per_category=True)
+        print(f"\nRetrieved {pkg['total_documents_retrieved']} relevant documents across categories.")
         print("\nFormatted Context Package Sample:\n")
         print(pkg["formatted_context_str"])
     except Exception as e:

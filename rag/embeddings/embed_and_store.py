@@ -35,7 +35,7 @@ def store_chunks(embedded_chunks : list[dict]) -> None:
       documents.append(chunk["text"])
       metadatas.append(metadata)
 
-    collection.add(
+    collection.upsert(
         ids = ids,
         embeddings=embeddings,
         documents=documents,
