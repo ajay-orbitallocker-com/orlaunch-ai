@@ -1,0 +1,98 @@
+{
+  "_comment": "LLM-generated relevance judgments for satellite_repair_droid, human-reviewable/editable. relevant/reason are from an LLM judge (gpt-4o-mini) — spot-check before trusting.",
+  "query_id": "satellite_repair_droid",
+  "query_text": "Project Name\n\nOrbital Satellite Repair Droid\n\nConcept Description\n\nI want to create a robotic spacecraft that can be launched into orbit and perform repairs on satellites that have become damaged, mal",
+  "embedding_fallback_used_at_generation": false,
+  "items": [
+    {
+      "id": 5236,
+      "title": "Automated Rendezvous and Docking Infrastructure to Support Commercial Space Development, Phase I",
+      "relevant": true,
+      "reason": "The document discusses automated rendezvous and docking technologies essential for the orbital satellite repair droid, as it needs to safely rendezvous and interface with satellites."
+    },
+    {
+      "id": 182206,
+      "title": "Small Spacecraft Propulsion and Inspection Capability",
+      "relevant": true,
+      "reason": "This document relates to propulsion and inspection capabilities needed for satellite servicing, closely aligning with the venture's purpose of conducting repairs on satellites."
+    },
+    {
+      "id": 18399,
+      "title": "Operationally Responsive Spacecraft Subsystem",
+      "relevant": true,
+      "reason": "The proposed subsystem control software for spacecraft can enhance the autonomy and responsiveness of the repair droid, crucial for effective mission execution."
+    },
+    {
+      "id": 6333,
+      "title": "Automated Fault Diagnostics, Prognostics, and Recovery in Spacecraft Power Systems, Phase I",
+      "relevant": true,
+      "reason": "This document focuses on automated fault diagnostics which is relevant for assessing the health of satellites before and after repairs."
+    },
+    {
+      "id": 17829,
+      "title": "Integrated Propulsion and Primary Structure Module for Small Satellite and CubeSat Applications",
+      "relevant": false,
+      "reason": "While integrated propulsion technologies are discussed, the focus on small satellites and CubeSats may not directly support the larger concept of satellite repair."
+    },
+    {
+      "id": "PATENT_10661916",
+      "title": "Patent US10661916: Autonomous Satellite Servicing, Refueling, and Life Extension System",
+      "relevant": true,
+      "reason": "This patent describes autonomous servicing capabilities that include refueling and component replacement, directly relevant to the operational objectives of the orbital satellite repair droid."
+    },
+    {
+      "id": 11482,
+      "title": "Semi-Autonomous Telerobotic Manipulation for On-Orbit Spacecraft Servicing and Assembly over Time-Delayed Telemetry",
+      "relevant": true,
+      "reason": "This document explores semi-autonomous systems for spacecraft servicing, aligning with the venture idea's goal of performing repairs in orbit."
+    },
+    {
+      "id": 33473,
+      "title": "Integrated Propulsion and Primary Structure Module for Small Satellite and CubeSat Applications",
+      "relevant": false,
+      "reason": "Similar to index 5, this document focuses on CubeSat applications and integration which may not apply to the larger satellite servicing context."
+    },
+    {
+      "id": 33358,
+      "title": "Unmanned Solar Electric Resource Prospector",
+      "relevant": false,
+      "reason": "The document is focused on prospecting missions, which does not provide relevant information or insights for a satellite repair venture."
+    },
+    {
+      "id": 146205,
+      "title": "Deep Space Autonomous Servicing",
+      "relevant": true,
+      "reason": "The document discusses methods for autonomous servicing and refueling, which are essential functions of the proposed repair droid."
+    },
+    {
+      "id": 112916,
+      "title": "Autonomous Docking Operations For A Novel In-Space Assembly Connector",
+      "relevant": true,
+      "reason": "The development of autonomous docking operations is crucial for the droid to attach to satellites during repair missions."
+    },
+    {
+      "id": 9246,
+      "title": "Space Mission Design in the Vicinity of Small Bodies and Libration Points",
+      "relevant": false,
+      "reason": "The focus on mission design around small bodies and libration points does not align with the practical needs of satellite repair."
+    },
+    {
+      "id": 16579,
+      "title": "Balancing Autonomous Spacecraft Activity Control with an Integrated Scheduler-Planner and Reactive Executive",
+      "relevant": true,
+      "reason": "This document discusses autonomy in spacecraft operations, which is critical for the autonomous functioning of the repair droid."
+    },
+    {
+      "id": 154498,
+      "title": "Coordinated Autonomous Debris Avoidance",
+      "relevant": false,
+      "reason": "While the technology addresses satellite swarm behavior, it does not directly support the repair and servicing of individual satellites."
+    },
+    {
+      "id": 9518,
+      "title": "Fault Detection and Isolation of Satellite Formations using a Ground Station",
+      "relevant": true,
+      "reason": "The FDI algorithm may provide valuable insights into monitoring satellite conditions, useful for maintenance and repair strategies."
+    }
+  ]
+}
