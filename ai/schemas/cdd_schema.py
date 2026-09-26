@@ -102,6 +102,13 @@ class InvestorReadinessSection(InferenceSection):
     key_gaps: list[str] = []
 
 
+class IdeaValidationResult(BaseModel):
+    """Query-routing check result - see ai/prompts/cdd_prompts.py::build_query_routing_prompt."""
+
+    is_venture_idea: bool
+    reason: str
+
+
 # Section name mapped to its schema class.
 SECTION_SCHEMAS: dict[str, type[BaseModel]] = {
     "2. Problem Analysis": ProblemAnalysisSection,

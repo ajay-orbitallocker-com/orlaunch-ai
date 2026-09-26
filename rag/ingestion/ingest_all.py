@@ -3,6 +3,7 @@ from rag.ingestion.chunk import chunk_documents_by_category
 from rag.ingestion.sources.sec_edgar.sec_edgar import fetch_all_financial_benchmarks
 from rag.ingestion.sources.patents.patents import fetch_all_space_patents
 from rag.ingestion.sources.rss_market.rss_market import fetch_all_market_news
+from rag.ingestion.utils import add_content_hashes, filter_oversized_documents
 from rag.embeddings.batch import run_batch_embedding, run_sync_embedding
 from rag.embeddings.embed_and_store import store_chunks
 
@@ -98,7 +99,9 @@ def prepare_all_chunks() -> list[dict]:
         ...passthrough fields from the source document}.
     """
     docs = collect_all_raw_documents()
+    docs = filter_oversized_documents(docs)
     chunks = chunk_documents_by_category(docs)
+    chunks = add_content_hashes(chunks)
 
     print(f"Total aggregated chunks across all data sources: {len(chunks)}")
     return chunks
@@ -164,8 +167,11 @@ def ingest_small_sources_sync() -> None:
         print("No documents collected from small sources.")
         return
 
+    all_docs = filter_oversized_documents(all_docs)
+
     print(f"\nChunking {len(all_docs)} small source documents by category...")
     chunks = chunk_documents_by_category(all_docs)
+    chunks = add_content_hashes(chunks)
     print(f"Produced {len(chunks)} chunks.")
 
     print(f"\nRunning synchronous embedding via OpenAI text-embedding-3-small...")

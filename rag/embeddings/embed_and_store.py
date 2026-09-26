@@ -10,6 +10,8 @@ def build_metadata(chunk : dict) -> dict:
         "category" : chunk.get("category" , ""),
         "source" : chunk.get("source" , ""),
         "url" : chunk.get("url" , ""),
+        "content_hash" : chunk.get("content_hash" , ""),
+        "ingested_at" : chunk.get("ingested_at" , ""),
     }
     trl_current = chunk.get("trl_current")
     if trl_current is not None:

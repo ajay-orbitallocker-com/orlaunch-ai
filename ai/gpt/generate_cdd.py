@@ -2,8 +2,8 @@ from pydantic import BaseModel
 
 from chroma_config import client
 from ai.gpt.config import GENERATION_MODEL, GENERATION_TOP_K
-from ai.prompts.cdd_prompts import build_grounded_prompt
-from ai.schemas.cdd_schema import GROUNDED_SECTIONS_SUPPORTED, get_section_schema, validate_cdd
+from ai.prompts.cdd_prompts import build_grounded_prompt, build_query_routing_prompt
+from ai.schemas.cdd_schema import GROUNDED_SECTIONS_SUPPORTED, IdeaValidationResult, get_section_schema, validate_cdd
 from rag.retrieval.search import retrieve_top_k_documents
 
 TECHNICAL_CATEGORY = "Technical & TRL"
@@ -36,6 +36,22 @@ def _call_structured_llm(system_prompt: str, user_prompt: str, schema: type[Base
         return response.choices[0].message.parsed
     except Exception as e:
         raise RuntimeError(f"CDD generation call failed: {e}") from e
+
+
+def _validate_idea_text(idea_text: str) -> None:
+    """
+    Query-routing gate: confirms idea_text is a genuine venture-assessment
+    request before the full retrieval/generation pipeline (8 sections'
+    worth of retrieval + LLM calls) runs on it. Raises ValueError if
+    rejected - callers decide how to surface that.
+    """
+    if not idea_text or not idea_text.strip():
+        raise ValueError("Idea text is empty.")
+
+    system_prompt, user_prompt = build_query_routing_prompt(idea_text)
+    result = _call_structured_llm(system_prompt, user_prompt, IdeaValidationResult)
+    if not result.is_venture_idea:
+        raise ValueError(f"Idea text rejected by query routing: {result.reason}")
 
 
 def _format_grounded_context(indexed_documents: list[tuple[int, dict]]) -> str:
@@ -75,6 +91,8 @@ def generate_grounded_section(section_name: str, idea_text: str, indexed_documen
 def generate_cdd(
     idea_text: str, top_k: int = GENERATION_TOP_K
 ) -> tuple[dict[str, BaseModel], dict[int, dict], list[dict]]:
+    _validate_idea_text(idea_text)
+
     # Generates every GROUNDED section, retrieving docs once per category and numbering them sequentially so each doc keeps one consistent index across sections, sources, and citations.
     categories_needed = {SECTION_CATEGORY_MAP.get(name, TECHNICAL_CATEGORY) for name in GROUNDED_SECTIONS_SUPPORTED}
     retrieved_by_category = {
