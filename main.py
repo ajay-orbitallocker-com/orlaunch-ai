@@ -9,7 +9,8 @@ rag.ingestion.ingest_all.run_ingestion_pipeline_all() first) and a working
 OPENAI_API_KEY (see chroma_config.py).
 """
 
-from rag.retrieval.search import retrieve_top_k_documents, build_context_package
+from rag.retrieval.search import retrieve_top_k_documents, build_context_package, get_all_categories
+
 
 # Hardcoded user input
 SAMPLE_IDEA_TEXT = """
@@ -83,14 +84,6 @@ Funding strategy
 Business plan
 Investor pitch deck"""
 
-CATEGORIES = [
-    "Technical & TRL",
-    "Financial Intelligence",
-    "Patents & IP",
-    "Market Intelligence",
-]
-
-
 def run_semantic_comparison(query_text: str, top_k: int = 5) -> None:
     print("=== Query (user idea text, first 300 chars) ===")
     print(query_text[:300] + ("..." if len(query_text) > 300 else ""))
@@ -102,11 +95,13 @@ def run_semantic_comparison(query_text: str, top_k: int = 5) -> None:
     print(package["formatted_context_str"])
 
     print("=== Per-category retrieval (metadata-filtered) ===")
-    for category in CATEGORIES:
+    categories = get_all_categories()
+    for category in categories:
         docs = retrieve_top_k_documents(query_text, top_k=top_k, category_filter=category)
         print(f"\n--- {category}: {len(docs)} matches ---")
         for doc in docs:
             print(f"  [{doc['similarity_score']}] {doc['title']}")
+
 
 
 if __name__ == "__main__":

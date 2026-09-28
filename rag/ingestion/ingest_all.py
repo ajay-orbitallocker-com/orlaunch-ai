@@ -54,41 +54,53 @@ def fetch_market_documents() -> list[dict]:
 # above will print a caught error until completed
 # ---------------------------------------------------------------------------
 
-def collect_all_raw_documents() -> list[dict]:
-    """
-    Aggregate documents from all 4 categories:
-    1. Technical & TRL (NASA TechPort)
-    2. Financial Intelligence (SEC EDGAR)
-    3. Patents & Prior Art (USPTO)
-    4. Market Intelligence (SpaceNews / Payload RSS)
-
-    Each source is a zero-arg fetch function returning documents in the
-    common shape ({"id", "text", "category", ...}). One try/except wraps
-    every source uniformly, so one source failing (including an
-    unimplemented placeholder) doesn't abort the others.
-
-    Returns:
-        list[dict] of raw documents, combined across all 4 sources.
-    """
-    sources = [
+def get_source_registry():
+    """Registry of all data sources and their fetch functions."""
+    return [
         ("NASA TechPort", fetch_techport_documents),
         ("SEC EDGAR", fetch_sec_documents),
         ("USPTO Patents", fetch_patent_documents),
         ("RSS Market News", fetch_market_documents),
     ]
 
+
+def collect_all_raw_documents(selected_sources: list[str] | None = None) -> list[dict]:
+    """
+    Aggregate documents from registered categories:
+    1. Technical & TRL (NASA TechPort)
+    2. Financial Intelligence (SEC EDGAR)
+    3. Patents & IP (NASA STI / USPTO Patents)
+    4. Market Intelligence (SpaceNews / Payload RSS)
+
+    Args:
+        selected_sources: Optional list of source names to ingest (e.g. ["SEC EDGAR", "USPTO Patents"]).
+                         If None, ingests from all registered sources.
+
+    Returns:
+        list[dict] of raw documents across selected sources.
+    """
+    registry = get_source_registry()
+    if selected_sources:
+        selected_lower = {s.lower() for s in selected_sources}
+        registry = [
+            (label, fn) for label, fn in registry
+            if label.lower() in selected_lower or any(s in label.lower() for s in selected_lower)
+        ]
+
     all_docs = []
-    for label, fetch_fn in sources:
+    for label, fetch_fn in registry:
         print(f"Fetching {label}...")
         try:
-            all_docs.extend(fetch_fn())
+            docs = fetch_fn()
+            print(f"  Fetched {len(docs)} documents from {label}.")
+            all_docs.extend(docs)
         except Exception as e:
             print(f"Error collecting {label}: {e}")
 
     return all_docs
 
 
-def prepare_all_chunks() -> list[dict]:
+def prepare_all_chunks(selected_sources: list[str] | None = None) -> list[dict]:
     """
     Fetch and chunk all aggregated documents, using the shared category-aware
     chunker so each source's category-appropriate splitter (prose vs.
@@ -98,90 +110,46 @@ def prepare_all_chunks() -> list[dict]:
         list[dict] of chunk dicts: {"id", "chunk_index", "text",
         ...passthrough fields from the source document}.
     """
-    docs = collect_all_raw_documents()
+    docs = collect_all_raw_documents(selected_sources=selected_sources)
     docs = filter_oversized_documents(docs)
     chunks = chunk_documents_by_category(docs)
     chunks = add_content_hashes(chunks)
 
-    print(f"Total aggregated chunks across all data sources: {len(chunks)}")
+    print(f"Total aggregated chunks across selected data sources: {len(chunks)}")
     return chunks
 
 
-def run_ingestion_pipeline_all() -> None:
+def run_ingestion_pipeline_all(
+    selected_sources: list[str] | None = None,
+    sync_embedding: bool = False
+) -> None:
     """
-    End-to-end multi-source pipeline: chunk -> embed -> store across all 4 categories.
+    End-to-end multi-source pipeline: collect -> chunk -> embed -> store.
+
+    Args:
+        selected_sources: Optional list of source labels to run.
+        sync_embedding: If True, uses run_sync_embedding directly (useful for small batches).
+                        If False, uses run_batch_embedding (OpenAI Batch API).
     """
-    print("Preparing aggregated document chunks across all 4 categories...")
-    chunks = prepare_all_chunks()
+    print("Preparing aggregated document chunks across data sources...")
+    chunks = prepare_all_chunks(selected_sources=selected_sources)
     print(f"Produced {len(chunks)} multi-category chunks")
 
     if not chunks:
         print("No document chunks produced.")
         return
 
-    embedded_chunks = run_batch_embedding(chunks)
-    print(f"Embedded {len(embedded_chunks)} chunks")
+    if sync_embedding:
+        print(f"Running synchronous embedding for {len(chunks)} chunks via OpenAI text-embedding-3-small...")
+        embedded_chunks = run_sync_embedding(chunks)
+    else:
+        print(f"Submitting batch embedding for {len(chunks)} chunks...")
+        embedded_chunks = run_batch_embedding(chunks)
 
+    print(f"Embedded {len(embedded_chunks)} chunks")
     store_chunks(embedded_chunks)
     print("Multi-source ingestion pipeline complete.")
 
-
-def clean_legacy_unidentified_chunks() -> int:
-    """Delete legacy chunks that were stored with id=None in ChromaDB."""
-    from chroma_config import collection
-    data = collection.get(include=["metadatas"])
-    corrupted_ids = [
-        doc_id for doc_id, meta in zip(data["ids"], data["metadatas"])
-        if not meta or meta.get("id") is None
-    ]
-    if corrupted_ids:
-        collection.delete(ids=corrupted_ids)
-        print(f"Cleaned up {len(corrupted_ids)} legacy chunks with id=None from ChromaDB.")
-    return len(corrupted_ids)
-
-
-def ingest_small_sources_sync() -> None:
-    """
-    Synchronously ingest, chunk, embed, and store small sources
-    (SEC EDGAR, USPTO Patents, RSS Market News) directly into ChromaDB.
-    Avoids waiting on the 24-hr batch API and ensures all 4 categories
-    have fresh, valid chunks with proper IDs in ChromaDB.
-    """
-    sources = [
-        ("SEC EDGAR", fetch_sec_documents),
-        ("USPTO Patents", fetch_patent_documents),
-        ("RSS Market News", fetch_market_documents),
-    ]
-
-    all_docs = []
-    for label, fetch_fn in sources:
-        print(f"Fetching {label}...")
-        try:
-            docs = fetch_fn()
-            print(f"  Fetched {len(docs)} documents from {label}.")
-            all_docs.extend(docs)
-        except Exception as e:
-            print(f"Error collecting {label}: {e}")
-
-    if not all_docs:
-        print("No documents collected from small sources.")
-        return
-
-    all_docs = filter_oversized_documents(all_docs)
-
-    print(f"\nChunking {len(all_docs)} small source documents by category...")
-    chunks = chunk_documents_by_category(all_docs)
-    chunks = add_content_hashes(chunks)
-    print(f"Produced {len(chunks)} chunks.")
-
-    print(f"\nRunning synchronous embedding via OpenAI text-embedding-3-small...")
-    embedded_chunks = run_sync_embedding(chunks)
-    print(f"Successfully embedded {len(embedded_chunks)} chunks.")
-
-    if embedded_chunks:
-        store_chunks(embedded_chunks)
-        print("Small sources sync ingestion complete and stored in ChromaDB.")
-
-
 if __name__ == "__main__":
     run_ingestion_pipeline_all()
+
