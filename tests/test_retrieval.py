@@ -3,6 +3,7 @@ from rag.retrieval.search import (
     build_where_clause,
     calculate_per_category_document_count,
     get_all_categories,
+    find_unknown_categories,
 )
 from rag.ingestion.config import get_default_categories
 
@@ -43,8 +44,22 @@ class TestRetrievalHelpers(unittest.TestCase):
         cats = get_all_categories()
         self.assertTrue(len(cats) > 0)
         default_cats = get_default_categories()
-        for dc in default_cats:
-            self.assertIn(dc, cats)
+        self.assertEqual(cats, default_cats)
+
+    def test_find_unknown_categories_with_clean_and_tainted_mock(self):
+        class MockCleanCollection:
+            def get(self, include=None):
+                return {"metadatas": [{"category": "Technical & TRL"}]}
+
+        class MockTaintedCollection:
+            def get(self, include=None):
+                return {"metadatas": [{"category": "Technical & TRL"}, {"category": "PoisonedCategory"}]}
+
+        clean_unknown = find_unknown_categories(db_collection=MockCleanCollection())
+        self.assertEqual(clean_unknown, [])
+
+        tainted_unknown = find_unknown_categories(db_collection=MockTaintedCollection())
+        self.assertEqual(tainted_unknown, ["PoisonedCategory"])
 
 
 if __name__ == "__main__":

@@ -21,6 +21,11 @@ class TestIngestionModule(unittest.TestCase):
         docs = ingest_all.collect_all_raw_documents(selected_sources=["NonExistentSource"])
         self.assertEqual(docs, [])
 
+    def test_collect_sources_exact_match_and_no_substring(self):
+        # Verify that substring "Patents" does not match "USPTO Patents"
+        docs = ingest_all.collect_all_raw_documents(selected_sources=["Patents"])
+        self.assertEqual(docs, [])
+
 
 if __name__ == "__main__":
     unittest.main()

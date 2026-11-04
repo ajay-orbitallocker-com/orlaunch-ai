@@ -23,15 +23,15 @@ def diff_relevance_judgments(old_items: list[dict], new_items: list[dict]) -> li
     new_by_id = {item["id"]: item for item in new_items}
 
     lines = []
-    for doc_id in sorted(set(new_by_id) - set(old_by_id)):
+    for doc_id in sorted(set(new_by_id) - set(old_by_id), key=str):
         item = new_by_id[doc_id]
         lines.append(f"  + added {doc_id!r} (relevant={item.get('relevant')}) — {item.get('title', '')}")
 
-    for doc_id in sorted(set(old_by_id) - set(new_by_id)):
+    for doc_id in sorted(set(old_by_id) - set(new_by_id), key=str):
         item = old_by_id[doc_id]
         lines.append(f"  - removed {doc_id!r} (was relevant={item.get('relevant')}) — {item.get('title', '')}")
 
-    for doc_id in sorted(set(old_by_id) & set(new_by_id)):
+    for doc_id in sorted(set(old_by_id) & set(new_by_id), key=str):
         old_relevant = old_by_id[doc_id].get("relevant")
         new_relevant = new_by_id[doc_id].get("relevant")
         if old_relevant != new_relevant:

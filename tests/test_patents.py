@@ -10,11 +10,12 @@ class TestPatentsModule(unittest.TestCase):
         self.assertTrue(len(patents_config.PATENT_SOURCES) > 0)
         source_names = [s["name"] for s in patents_config.PATENT_SOURCES]
         self.assertIn("NASA STI (NTRS)", source_names)
-        self.assertIn("USPTO PatentsView", source_names)
+        self.assertNotIn("USPTO PatentsView", source_names)
         self.assertNotIn("USPTO Prior Art Database", source_names)
 
-    def test_no_curated_servicing_patents_in_module(self):
+    def test_no_patentsview_or_curated_servicing_patents_in_module(self):
         self.assertFalse(hasattr(patents, "CURATED_SERVICING_PATENTS"))
+        self.assertFalse(hasattr(patents, "fetch_patentsview_patents"))
 
     def test_document_text_builders(self):
         mock_patent = {

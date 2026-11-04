@@ -1,4 +1,3 @@
-import json
 import requests
 
 from rag.ingestion.config import USER_AGENT
@@ -13,60 +12,10 @@ def _get_source_by_name(name: str) -> dict | None:
     return None
 
 
-def fetch_patentsview_patents(keyword: str, limit: int = 5) -> list[dict]:
-    """
-    Query USPTO PatentsView API for space subsystem patents matching keyword.
-    Requires registered API Key (X-Api-Key) as configured in PATENT_SOURCES.
-    """
-    source = _get_source_by_name("USPTO PatentsView")
-    if not source:
-        return []
-
-    api_key = source.get("api_key", "")
-    api_url = source.get("url", "https://search.patentsview.org/api/v1/patent/")
-
-    if not api_key:
-        print("PatentsView API key not configured. Skipping PatentsView query.")
-        return []
-
-    headers = {
-        "User-Agent": USER_AGENT,
-        "Accept": "application/json",
-        "X-Api-Key": api_key,
-    }
-
-    query = {"_text_phrase": {"patent_title": keyword}}
-    fields = ["patent_id", "patent_number", "patent_title", "patent_date", "patent_abstract"]
-    params = {
-        "q": json.dumps(query),
-        "f": json.dumps(fields),
-        "o": json.dumps({"per_page": limit}),
-    }
-
-    try:
-        response = requests.get(
-            api_url,
-            params=params,
-            headers=headers,
-            timeout=15,
-        )
-        if response.status_code == 200:
-            data = response.json()
-            return data.get("patents", data.get("data", []))
-        elif response.status_code in (401, 403):
-            print(f"PatentsView API authentication error (status {response.status_code}).")
-        else:
-            print(f"PatentsView API returned status {response.status_code}: {response.text[:200]}")
-    except Exception as e:
-        print(f"PatentsView API query error for '{keyword}': {e}")
-
-    return []
-
-
 def fetch_nasa_sti_prior_art(keyword: str, limit: int = 5) -> list[dict]:
     """
     Query NASA STI (NTRS) citations API for aerospace prior art, technical papers,
-    and subsystem patents matching keyword. (Public REST API, no auth required).
+    and subsystem reports matching keyword. (Public REST API, no auth required).
     """
     source = _get_source_by_name("NASA STI (NTRS)")
     api_url = source.get("url") if source else "https://ntrs.nasa.gov/api/citations/search"
@@ -75,9 +24,11 @@ def fetch_nasa_sti_prior_art(keyword: str, limit: int = 5) -> list[dict]:
         "User-Agent": USER_AGENT,
         "Accept": "application/json",
     }
+    # requests does not encode nested dictionaries like {"page": {"size": limit}}.
+    # NTRS expects standard query parameters: page.size=limit
     params = {
         "q": keyword,
-        "page": {"size": limit},
+        "page.size": limit,
     }
 
     try:
@@ -99,7 +50,7 @@ def fetch_nasa_sti_prior_art(keyword: str, limit: int = 5) -> list[dict]:
 
 
 def build_patent_document_text(patent: dict) -> str:
-    """Format USPTO patent details into structured document text for embeddings."""
+    """Format patent details into structured document text for embeddings."""
     title = patent.get("patent_title", "Space Technology Patent")
     p_num = patent.get("patent_id") or patent.get("patent_number", "N/A")
     date = patent.get("patent_date", "N/A")
@@ -141,13 +92,12 @@ def build_nasa_sti_document_text(item: dict) -> str:
 def fetch_all_space_patents(keywords: list[str] | None = None) -> list[dict]:
     """
     Fetch aerospace patents and subsystem prior art across configured sources
-    in PATENT_SOURCES (NASA STI and USPTO PatentsView) matching search keywords.
+    in PATENT_SOURCES (NASA STI) matching search keywords.
     """
     search_keywords = keywords or DEFAULT_SEARCH_KEYWORDS
     results = []
     seen_ids = set()
 
-    # 1. Fetch from NASA STI (NTRS) - active public API
     for kw in search_keywords:
         items = fetch_nasa_sti_prior_art(kw, limit=3)
         for item in items:
@@ -162,23 +112,6 @@ def fetch_all_space_patents(keywords: list[str] | None = None) -> list[dict]:
                     "category": "Patents & IP",
                     "source": "NASA STI (NTRS)",
                     "url": f"https://ntrs.nasa.gov/citations/{item_id}",
-                })
-
-    # 2. Fetch from USPTO PatentsView if key configured
-    for kw in search_keywords:
-        patents = fetch_patentsview_patents(kw, limit=3)
-        for p in patents:
-            p_id = p.get("patent_id") or p.get("patent_number")
-            if p_id and p_id not in seen_ids:
-                seen_ids.add(p_id)
-                doc_text = build_patent_document_text(p)
-                results.append({
-                    "id": f"PATENT_{p_id}",
-                    "title": f"Patent US{p_id}: {p.get('patent_title', '')}",
-                    "text": doc_text,
-                    "category": "Patents & IP",
-                    "source": "USPTO PatentsView",
-                    "url": f"https://patents.google.com/patent/US{p_id}",
                 })
 
     return results

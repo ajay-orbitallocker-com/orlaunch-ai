@@ -81,11 +81,26 @@ def collect_all_raw_documents(selected_sources: list[str] | None = None) -> list
     """
     registry = get_source_registry()
     if selected_sources:
-        selected_lower = {s.lower() for s in selected_sources}
-        registry = [
-            (label, fn) for label, fn in registry
-            if label.lower() in selected_lower or any(s in label.lower() for s in selected_lower)
-        ]
+        reg_map = {label.lower(): (label, fn) for label, fn in registry}
+        matched = []
+        seen_matched = set()
+        unmatched = []
+
+        for s in selected_sources:
+            s_clean = s.strip()
+            key = s_clean.lower()
+            if key in reg_map:
+                if key not in seen_matched:
+                    seen_matched.add(key)
+                    matched.append(reg_map[key])
+            else:
+                unmatched.append(s)
+
+        if unmatched:
+            valid_names = [label for label, _ in registry]
+            print(f"Warning: unmatched source name(s) in selected_sources: {unmatched}. Valid registered sources are: {valid_names}")
+
+        registry = matched
 
     all_docs = []
     for label, fetch_fn in registry:

@@ -152,24 +152,37 @@ def retrieve_top_k_documents_with_status(
     return {"documents": documents, "embedding_fallback_used": False}
 
 
-def get_all_categories(db_collection=collection) -> list[str]:
+def find_unknown_categories(db_collection=collection) -> list[str]:
     """
-    Dynamically discover all unique categories from the vector store.
-    Falls back to default categories if collection is unpopulated or empty.
+    Inspect the vector store for any undocumented or unexpected categories.
+    Used for integrity audits and warning alerts only — does not allocate
+    retrieval slots or inject untrusted categories into GPT's context window.
     """
+    default_cats = set(get_default_categories())
     try:
         data = db_collection.get(include=["metadatas"])
         if data and "metadatas" in data and data["metadatas"]:
-            cats = {
+            db_cats = {
                 m.get("category")
                 for m in data["metadatas"]
                 if m and m.get("category")
             }
-            if cats:
-                return sorted(cats)
+            unknown = sorted(db_cats - default_cats)
+            if unknown:
+                print(f"Warning: detected unknown/untrusted categories in vector store: {unknown}")
+            return unknown
     except Exception as e:
-        print(f"Warning: could not query categories dynamically: {e}")
+        print(f"Warning: could not inspect unknown categories: {e}")
 
+    return []
+
+
+def get_all_categories() -> list[str]:
+    """
+    Return registered default categories.
+    Retained for backward compatibility; delegates directly to get_default_categories()
+    to avoid reading entire DB chunk metadata on every search.
+    """
     return get_default_categories()
 
 
@@ -190,9 +203,9 @@ def retrieve_multi_category_documents(
     categories: list[str] | None = None
 ) -> dict[str, list[dict]]:
     """
-    Retrieve top-K matching documents across each category dynamically discovered or specified.
+    Retrieve top-K matching documents across registered default categories or explicitly specified categories.
     """
-    target_categories = categories or get_all_categories()
+    target_categories = categories or get_default_categories()
     results_by_cat = {}
     for cat in target_categories:
         results_by_cat[cat] = query_top_k_documents(
@@ -222,7 +235,7 @@ def build_context_package(
         categories: List of categories to retrieve when per_category=True.
     """
     if per_category:
-        target_cats = categories or get_all_categories()
+        target_cats = categories or get_default_categories()
         per_cat_limit = calculate_per_category_document_count(top_k, target_cats)
         cat_map = retrieve_multi_category_documents(
             query_text, per_category_k=per_cat_limit, categories=target_cats
