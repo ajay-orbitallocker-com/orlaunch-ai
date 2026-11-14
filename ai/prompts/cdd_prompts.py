@@ -33,6 +33,19 @@ Produce a reasoned, plausible inference grounded in the idea itself and general 
 
 If the response schema asks for additional structured fields (e.g. a list of risks, roles, or an investor-readiness score), populate them as reasoned inferences consistent with what `text` says."""
 
+SYNTHESIS_SYSTEM_PROMPT = f""" {ANALYST_PERSONA}
+
+{UNTRUSTED_CONTENT_GUARD}
+
+You will be given only the founder's original idea  and the CDD sections written.
+The output must stay consistent with those sections and must not introduce new claims.
+Do not copy [Doc N] markers or exact figures from the GROUNDED sections because the
+citation checks skip INFERENCE sections, so an unsourced number written here would never be flagged;
+
+{STRUCTURE_INSTRUCTION}
+
+"""
+
 # One-line focus guidance per section this module currently generates.
 SECTION_GUIDANCE: dict[str, str] = {
     "2. Problem Analysis": "Identify the specific industry challenges and pain points this venture addresses, grounded in the reference documents.",
@@ -49,7 +62,7 @@ SECTION_GUIDANCE: dict[str, str] = {
     "12. Commercialization Strategy": "Describe a plausible revenue model and go-to-market approach.",
     "13. Team Structure": "Describe the engineering and business functions the founding team will need to cover.",
     "14. Capital Requirements": "Estimate funding needs by phase, using the financial benchmarks in the reference documents as a comparison point.",
-    "15. Investor Readiness Score": "Give a qualitative assessment of the venture's overall investment readiness and the biggest open gaps.",
+    "15. Investor Readiness Score": "Score readiness from 1 (not investable) to 10 (ready to raise), and list the biggest open gaps in key_gaps",
 }
 
 
@@ -76,6 +89,14 @@ def build_inference_prompt(section_name: str, idea_text: str) -> tuple[str, str]
     )
     return INFERENCE_SYSTEM_PROMPT, user_prompt
 
+def build_synthesis_prompt(section_name: str, idea_text: str, generated_sections: str) -> tuple[str, str]:
+      user_prompt = (
+          f"Section to write: {section_name}\n"
+          f"Focus: {_guidance(section_name)}\n\n"
+          f"Founder's idea:\n<founder_idea>\n{idea_text}\n</founder_idea>\n\n"
+          f"CDD sections written so far:\n<generated_section_text>\n{generated_sections}\n</generated_section_text>"
+      )
+      return SYNTHESIS_SYSTEM_PROMPT, user_prompt
 
 QUERY_ROUTING_SYSTEM_PROMPT = f"""You are a routing filter in front of a venture-analysis pipeline that costs real money and time to run per request.
 

@@ -2,8 +2,8 @@ from pydantic import BaseModel
 
 from chroma_config import client
 from ai.gpt.config import GENERATION_MODEL, GENERATION_TOP_K
-from ai.prompts.cdd_prompts import build_grounded_prompt, build_query_routing_prompt
-from ai.schemas.cdd_schema import GROUNDED_SECTIONS_SUPPORTED, IdeaValidationResult, get_section_schema, validate_cdd
+from ai.prompts.cdd_prompts import build_grounded_prompt, build_query_routing_prompt, build_inference_prompt,build_synthesis_prompt
+from ai.schemas.cdd_schema import GROUNDED_SECTIONS_SUPPORTED, INFERENCE_SECTIONS_SUPPORTED, SYNTHESIS_SECTIONS_SUPPORTED,IdeaValidationResult, get_section_schema, validate_cdd
 from rag.retrieval.search import retrieve_top_k_documents
 
 TECHNICAL_CATEGORY = "Technical & TRL"
@@ -67,6 +67,11 @@ def _format_grounded_context(indexed_documents: list[tuple[int, dict]]) -> str:
         lines.append(f"[Doc {idx}] {doc.get('title', 'Untitled Document')}\n{doc.get('text', '')}")
     return "\n\n".join(lines)
 
+def _format_generated_sections(cdd : dict[str , BaseModel]) -> str:
+    """
+        converts the sections written to text
+    """
+    return "\n\n".join(f"{name}\n{section.text}" for name,section in cdd.items())
 
 def _build_source_map(retrieved_documents: list[dict]) -> dict[int, dict]:
     """Maps each [Doc N] marker (same 1-based numbering as _format_grounded_context)
@@ -87,6 +92,15 @@ def generate_grounded_section(section_name: str, idea_text: str, indexed_documen
     system_prompt, user_prompt = build_grounded_prompt(section_name, idea_text, context)
     return _call_structured_llm(system_prompt, user_prompt, get_section_schema(section_name))
 
+
+def generate_inference_section(section_name: str, idea_text: str) -> BaseModel:
+    system_prompt, user_prompt = build_inference_prompt(section_name, idea_text)
+    return _call_structured_llm(system_prompt, user_prompt, get_section_schema(section_name))
+
+def generate_synthesis_section(section_name : str , idea_txt : str , cdd : dict[str , BaseModel]) -> BaseModel:
+    generated_sections = _format_generated_sections(cdd)
+    system_prompt , user_prompt = build_synthesis_prompt(section_name , idea_txt , generated_sections)
+    return _call_structured_llm(system_prompt , user_prompt , get_section_schema(section_name))
 
 def generate_cdd(
     idea_text: str, top_k: int = GENERATION_TOP_K
@@ -116,6 +130,11 @@ def generate_cdd(
         indexed_documents = list(zip(category_doc_indices[category], retrieved_by_category[category]))
         cdd[section_name] = generate_grounded_section(section_name, idea_text, indexed_documents)
 
+    for section_name in INFERENCE_SECTIONS_SUPPORTED:
+        cdd[section_name] = generate_inference_section(section_name, idea_text)
+    for section_name in SYNTHESIS_SECTIONS_SUPPORTED:
+        cdd[section_name] = generate_synthesis_section(section_name , idea_text , cdd)
+
     warnings = validate_cdd(cdd, sources)
     if warnings:
         print("CDD validation warnings:")
@@ -132,7 +151,7 @@ if __name__ == "__main__":
     from rag.hallucination.evaluate_hallucination import REFERENCE_IDEA_TEXT
     from rag.hallucination.report import build_report
 
-    print("=== Generating CDD (8 GROUNDED sections only - no INFERENCE sections) ===")
+    print("=== Generating CDD (8 GROUNDED + 5 INFERENCE + 2 SYNTHESIS sections) ===")
     try:
         cdd, sources, all_retrieved_documents = generate_cdd(REFERENCE_IDEA_TEXT)
         print(json.dumps({name: section.model_dump() for name, section in cdd.items()}, indent=2))

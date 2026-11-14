@@ -16,6 +16,22 @@ GROUNDED_SECTIONS_SUPPORTED = [
     "14. Capital Requirements",
 ]
 
+# The INFERENCE sections this generation module can currently produce.
+INFERENCE_SECTIONS_SUPPORTED = [
+    "8. Mission Architecture",
+    "9. Risk Assessment",
+    "11. Manufacturing Strategy",
+    "12. Commercialization Strategy",
+    "13. Team Structure",
+]
+
+# INFERENCE sections that summarize the rest of the CDD, so they run last.
+  # Investor Readiness comes first so the Executive Summary can mention its score.
+SYNTHESIS_SECTIONS_SUPPORTED = [
+      "15. Investor Readiness Score",
+      "1. Executive Summary",
+  ]
+
 
 # Structured output schemas, one per CDD section.
 
@@ -89,6 +105,10 @@ class DevelopmentRoadmapSection(GroundedSection):
     milestones: list[Milestone] = []
 
 
+class ManufacturingStrategySection(InferenceSection):
+    production_approach: list[str] = []
+
+
 class CommercializationStrategySection(InferenceSection):
     revenue_streams: list[str] = []
 
@@ -120,6 +140,7 @@ SECTION_SCHEMAS: dict[str, type[BaseModel]] = {
     "8. Mission Architecture": MissionArchitectureSection,
     "9. Risk Assessment": RiskAssessmentSection,
     "10. Development Roadmap": DevelopmentRoadmapSection,
+    "11. Manufacturing Strategy": ManufacturingStrategySection,
     "12. Commercialization Strategy": CommercializationStrategySection,
     "13. Team Structure": TeamStructureSection,
     "14. Capital Requirements": CapitalRequirementsSection,
@@ -166,7 +187,7 @@ def validate_cdd(cdd: dict[str, BaseModel], sources: dict[int, dict] | None = No
             warnings.append(f"'{section_name}' has no text")
             continue
         if CDD_SECTIONS[section_name] == GROUNDED:
-            needs_citation = any(p.search(text) for p in CITATION_CHECK_PATTERNS)
+            needs_citation = any(p["pattern"].search(text) for p in CITATION_CHECK_PATTERNS)
             has_citation = bool(CITATION_MARKER_PATTERN.search(text))
             if needs_citation and not has_citation:
                 warnings.append(f"'{section_name}' has a checkable claim but no [Doc N] citation anywhere")
