@@ -189,15 +189,15 @@ def export_cdd_to_pdf(
     """Writes the generated CDD sections to a PDF file.
 
     Args:
-        cdd: Section name mapped to section model.
+        cdd: Section heading mapped to section model, in the order to print.
         sources: Doc number mapped to {title, url, category}, or None.
         idea_title: The document's title.
         output_path: Where to write the PDF, or None to generate a
             timestamped path under OUTPUTS_DIR.
 
     Returns:
-        The Path of the written PDF file, containing each section (ordered
-        by its leading section number) with its text, citations linked to
+        The Path of the written PDF file, containing each section (in the
+        order given, numbered by position) with its text, citations linked to
         a References section when sources is given, and any extra
         structured fields.
     """
@@ -205,7 +205,7 @@ def export_cdd_to_pdf(
         OUTPUTS_DIR.mkdir(exist_ok=True)
         output_path = OUTPUTS_DIR / f"cdd_{datetime.now():%Y%m%d_%H%M%S}.pdf"
 
-    ordered_sections = sorted(cdd.items(), key=lambda kv: int(kv[0].split(".")[0]))
+    ordered_sections = list(cdd.items())
 
     pdf = FPDF()
     pdf.add_page()
@@ -216,9 +216,9 @@ def export_cdd_to_pdf(
     pdf.set_x(pdf.l_margin)
     pdf.ln(4)
 
-    for section_name, section in ordered_sections:
+    for number, (section_name, section) in enumerate(ordered_sections, 1):
         pdf.set_font("Helvetica", "B", 13)
-        pdf.multi_cell(0, 8, _sanitize(section_name))
+        pdf.multi_cell(0, 8, _sanitize(f"{number}. {section_name}"))
         pdf.set_x(pdf.l_margin)
         pdf.set_font("Helvetica", "", 11)
         _write_body_with_citations(pdf, section.text, link_ids)

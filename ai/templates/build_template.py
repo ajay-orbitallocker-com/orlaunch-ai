@@ -1,61 +1,45 @@
-from pydantic import BaseModel , ConfigDict , model_validator
-from ai.templates.template_labels import Domain , Segment , OfferingType , FundingPath , Audience
+"""
+Build template: turn confirmed labels into the guaranteed CDD sections.
 
-class Selection(BaseModel):
-    
-    model_config = ConfigDict(frozen=True)
+It returns the minimum sections every CDD for this venture must have. 
+The AI outline step then adds assessments, any extra sections, the final order and the headings.
+"""
 
-    @property
-    def values(self) -> frozenset[Domain]:
-        """
-        Primary and secondary together, for matching sections.
-        """
-        return frozenset({self.primary , *self.secondary})
-    @property
-    def is_mixed(self) -> bool:
-        """True when more than one value is selected."""
-        return len(self.values) > 1   
-    
-    @model_validator(mode = "after")
-    def check_values(self):
-        """Runs automatically after the object is created and rejects bad input."""
+from dataclasses import dataclass
 
-        # the primary domain should not also be listed as secondary.
-        if self.primary in self.secondary or len(self.secondary) != len(set(self.secondary)):
-            raise ValueError("Each value may appear only once across primary and secondary.")
+from ai.templates.template_label_conditions import LabelCondition, get_conditions
+from ai.templates.template_section_rules import EXCLUSIVE_PAIRS, SECTION_RULES
+from ai.templates.template_sections import TemplateSection
+from ai.templates.template_selection import TemplateSelection
 
-        # Unknown domain
-        if Domain.UNKNOWN in self.values and len(self.values) > 1:
-            raise ValueError("UNKNOWN cannot be combined with other domains.")
 
-        return self
+@dataclass(frozen=True)
+class CDDTemplate:
+    """The guaranteed floor for one venture, before the AI plans the outline."""
 
-class SegmentSelection(Selection):
-    """What the venture is for. Satellite: IN_SPACE_SERVICES."""
+    conditions: frozenset[LabelCondition]  # passed to the outline step as context
+    sections: tuple[TemplateSection, ...]   # catalogue order; the AI sets the final order
 
-    primary : Segment
-    secondary : tuple[Segment , ...] = ()
 
-class DomainSelection(Selection):
-    """Where the venture operates. Comet: DEEP_SPACE + (SMALL_BODIES,)."""
-    
-     # The main place the venture operates.
-    primary : Domain
-    secondary : tuple[Domain , ...] = ()
+def build_template(selection: TemplateSelection) -> CDDTemplate:
+    """Return the conditions and guaranteed sections for the confirmed labels."""
+    conditions = get_conditions(selection)
 
-class FundingSelection(Selection):
-    """Who pays to build it. Comet: GRANTS_AGENCY + (VENTURE_CAPITAL,)."""
-    
-    primary: FundingPath
-    secondary: tuple[FundingPath, ...] = ()
+    # Keep every section whose rule is satisfied. A section without a rule
+    # raises KeyError, so a new section can't be forgotten silently.
+    sections = tuple(
+        section for section in TemplateSection
+        if SECTION_RULES[section].is_included(conditions)
+    )
 
-class TemplateSelection(BaseModel):
-    """The confirmed labels that decide which CDD template is built."""
+    _check_exclusive_pairs(sections)
+    return CDDTemplate(conditions=frozenset(conditions), sections=sections)
 
-    model_config = ConfigDict(frozen=True)
 
-    segment: SegmentSelection       
-    domain: DomainSelection         
-    offering_type: OfferingType     
-    funding: FundingSelection       
-    audience: Audience              
+def _check_exclusive_pairs(sections: tuple[TemplateSection, ...]) -> None:
+    """Exactly one section of each exclusive pair must be present."""
+    for first, second in EXCLUSIVE_PAIRS:
+        if (first in sections) == (second in sections):
+            raise ValueError(
+                f"Expected exactly one of {first.value} and {second.value}."
+            )
