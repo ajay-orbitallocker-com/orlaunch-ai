@@ -6,3 +6,5 @@ tiktoken
 beautifulsoup4
 tenacity
 fpdf2
+pydantic-settings
+qdrant-client
