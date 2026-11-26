@@ -114,14 +114,15 @@ class QdrantSettings(BaseSettings):
     write_api_key: SecretStr | None = None      # ingestion key, read and write
     timeout_seconds: int = 10                   # per-request timeout
     prefer_grpc: bool = False                   # use gRPC instead of HTTP
-    primary_alias: str = "corpus_primary"       # alias for filings, rules, patents, TechPort
-    secondary_alias: str = "corpus_secondary"   # alias for news
-
+    primary_sources_alias: str = "primary_sources"  # filings, rules, patents, TechPort
+    news_sources_alias: str = "news_sources"        # news feeds, lower trust
+    
     @model_validator(mode="after")
     def _aliases_distinct(self) -> "QdrantSettings":
+        
         """Reject the same alias for both trust levels."""
-        if self.primary_alias == self.secondary_alias:
-            raise ValueError("primary_alias and secondary_alias must differ")
+        if self.primary_sources_alias == self.news_sources_alias:
+            raise ValueError("primary_sources_alias and news_sources_alias must differ")        
         return self
 
     def api_key_for(self, role: QdrantRole) -> SecretStr | None:
