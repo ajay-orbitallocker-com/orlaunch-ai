@@ -193,3 +193,5 @@ def load_settings(env_file: Path | None = DEFAULT_ENV_FILE) -> Settings:
         settings = Settings(**loaded)
         _require_for_deployed_env(settings)
         return settings
+
+    

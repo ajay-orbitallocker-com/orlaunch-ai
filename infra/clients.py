@@ -1,11 +1,12 @@
 """Client factories: build OpenAI and Qdrant clients from settings, only when called."""
 
 from __future__ import annotations
+import psycopg
 
 from openai import OpenAI
 from qdrant_client import QdrantClient
 
-from config.settings import Environment, OpenAISettings, QdrantRole, QdrantSettings, SettingsError
+from config.settings import Environment, OpenAISettings, QdrantRole, QdrantSettings, SettingsError,PostgresSettings
 
 def build_open_ai_client(settings : OpenAISettings) -> OpenAI:
      
@@ -31,3 +32,9 @@ def build_qdrant_client( settings: QdrantSettings, role: QdrantRole, env: Enviro
         timeout=settings.timeout_seconds,
         prefer_grpc=settings.prefer_grpc,
     )
+
+def build_postgres_connection(settings: PostgresSettings) -> psycopg.Connection:
+    """Postgres connection from POSTGRES_DSN, with a bounded connect timeout."""
+    if settings.dsn is None:
+        raise SettingsError("POSTGRES_DSN is not set")
+    return psycopg.connect(settings.dsn.get_secret_value(), connect_timeout=10)

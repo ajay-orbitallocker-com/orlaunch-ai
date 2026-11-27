@@ -19,8 +19,8 @@ METADATA_INDEXES: dict[str, models.PayloadSchemaType] = {
     "entities": models.PayloadSchemaType.KEYWORD,
     "document_id": models.PayloadSchemaType.KEYWORD,   # find and clean up a document's chunks
     "parent_id": models.PayloadSchemaType.KEYWORD,
-    "cpc_codes": models.PayloadSchemaType.KEYWORD,
-    "cfr_section": models.PayloadSchemaType.KEYWORD,
+    "extra.cpc_codes": models.PayloadSchemaType.KEYWORD,     # patents only
+    "extra.cfr_section": models.PayloadSchemaType.KEYWORD,   # regulations only
     "published_at": models.PayloadSchemaType.DATETIME,
 }
 

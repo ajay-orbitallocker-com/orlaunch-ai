@@ -8,3 +8,4 @@ tenacity
 fpdf2
 pydantic-settings
 qdrant-client
+psycopg[binary]>=3.2
