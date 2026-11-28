@@ -1,0 +1,11 @@
+python-dotenv
+requests
+chromadb
+openai
+tiktoken
+beautifulsoup4
+tenacity
+fpdf2
+pydantic-settings
+qdrant-client
+psycopg[binary]>=3.2

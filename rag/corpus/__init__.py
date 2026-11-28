@@ -1,0 +1,1 @@
+"""What the searchable corpus is made of: evidence categories, document types, and the document and chunk shapes."""

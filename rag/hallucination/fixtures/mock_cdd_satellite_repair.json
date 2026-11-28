@@ -1,0 +1,6 @@
+{
+  "_comment": "Hand-written stand-in for the not-yet-built GPT CDD output, used to test the hallucination checker end-to-end.",
+  "6. Technical Feasibility Assessment": "Orbital debris inspection using a commercial small spacecraft platform has been demonstrated at TRL 5, targeting TRL 9 [Doc 3]. Spacecraft avionics have been shown to autonomously reconfigure for best performance across varying mission conditions at TRL 5 [Doc 2]. The proposed repair droid will additionally achieve fully autonomous fault correction with zero ground-control oversight by 2027, a capability with a 100% reliability guarantee from its onboard AI.",
+  "14. Capital Requirements": "The orbital servicing market is projected to reach $6.2 billion by 2028. This venture will require $45 million in seed funding to reach its first commercial docking demonstration by 2026.",
+  "13. Team Structure": "The founding team will need to cover guidance and control engineering, robotics and mechanical engineering, business development, and regulatory affairs, growing as the company progresses toward flight hardware."
+}

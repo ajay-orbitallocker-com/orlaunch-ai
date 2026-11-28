@@ -1,0 +1,98 @@
+{
+  "_comment": "LLM-generated relevance judgments for satellite_repair_droid, human-reviewable/editable. relevant/reason are from an LLM judge (gpt-4o-mini) \u2014 spot-check before trusting.",
+  "query_id": "satellite_repair_droid",
+  "query_text": "Project Name\n\nOrbital Satellite Repair Droid\n\nConcept Description\n\nI want to create a robotic spacecraft that can be launched into orbit and perform repairs on satellites that have become damaged, mal",
+  "embedding_fallback_used_at_generation": false,
+  "items": [
+    {
+      "id": "NASA_STI_19840057821",
+      "title": "Satellite Servicing Technology Development Missions",
+      "relevant": true,
+      "reason": "This document discusses satellite servicing technologies that are essential for the development of orbital repair capabilities, making it directly relevant to the venture idea."
+    },
+    {
+      "id": "NASA_STI_19880010119",
+      "title": "Customer concerns regarding satellite servicing",
+      "relevant": true,
+      "reason": "This paper addresses customer concerns related to satellite servicing, critical for assessing market viability and customer needs for the venture."
+    },
+    {
+      "id": "NASA_STI_20120002703",
+      "title": "Active Debris Removal",
+      "relevant": false,
+      "reason": "Focuses on debris removal, which is not related to satellite repair services proposed in the venture."
+    },
+    {
+      "id": "NASA_STI_20110005437",
+      "title": "Engineering Challenges for Active Debris Removal",
+      "relevant": false,
+      "reason": "Discusses debris removal engineering challenges rather than satellite servicing or repair, making it less relevant."
+    },
+    {
+      "id": "NASA_STI_20140010507",
+      "title": "Vision Based Autonomous Robotic Control for Advanced Inspection and Repair",
+      "relevant": true,
+      "reason": "Explores advanced robotic control for inspection and repair, aligning well with the proposed capabilities of the orbital repair droid."
+    },
+    {
+      "id": "NASA_STI_20260007230",
+      "title": "Ground Demonstration of Autonomous Robotic Laser Beam Welding for In-Space Servicing, Assembly, and Manufacturing",
+      "relevant": true,
+      "reason": "Covers autonomous robotic capabilities that are relevant for in-space servicing, including repair tasks similar to those proposed in the venture."
+    },
+    {
+      "id": "NASA_STI_20260008927",
+      "title": "Ground Demonstration of Autonomous Robotic Laser Beam Welding for In-Space Servicing, Assembly, and Manufacturing",
+      "relevant": true,
+      "reason": "Similar to index 6, this work is relevant in exploring robotic capabilities for servicing that are applicable to the venture."
+    },
+    {
+      "id": "NASA_STI_19940007093",
+      "title": "On-orbit refueling",
+      "relevant": true,
+      "reason": "Discusses on-orbit refueling, a component of the venture that focuses on extending satellite operational life."
+    },
+    {
+      "id": "NASA_STI_19940007095",
+      "title": "Preliminary analysis of the benefits derived to US Air Force spacecraft from on-orbit refueling",
+      "relevant": true,
+      "reason": "Analyzes benefits of on-orbit refueling specific to spacecraft, which is pertinent for the venture's operations."
+    },
+    {
+      "id": "NASA_STI_19930013099",
+      "title": "Supervised autonomous rendezvous and docking systems technology evaluations",
+      "relevant": true,
+      "reason": "Covers technologies for autonomous rendezvous and docking, which is critical for the spacecraft's capabilities."
+    },
+    {
+      "id": "NASA_STI_19930013049",
+      "title": "Autonomous prealignment of a docking mechanism",
+      "relevant": true,
+      "reason": "Focuses on autonomous docking mechanisms, important for operational success of the spacecraft in orbital repair."
+    },
+    {
+      "id": "NASA_STI_19870007422",
+      "title": "Tethered orbital refueling study",
+      "relevant": true,
+      "reason": "Discusses a tethered orbital refueling facility, relevant to the logistics and operational strategy of the venture."
+    },
+    {
+      "id": "NASA_STI_19630028696",
+      "title": "ORBITAL RENDEZVOUS CONSIDERATIONS FOR A MARS MISSION",
+      "relevant": false,
+      "reason": "Focuses on Mars mission specific rendezvous, which is not directly related to the satellite repair concept."
+    },
+    {
+      "id": "NASA_STI_19940021175",
+      "title": "Hardware design of a grappling/docking device accommodating large lateral and angular misalignments",
+      "relevant": true,
+      "reason": "Describes docking devices which are relevant for the spacecraft's handling and operational needs when repairing satellites."
+    },
+    {
+      "id": "NASA_STI_20150007835",
+      "title": "Autonomous Vision-Based Tethered-Assisted Rover Docking",
+      "relevant": false,
+      "reason": "Focuses on rover docking rather than spacecraft servicing, making it less applicable to the venture."
+    }
+  ]
+}
