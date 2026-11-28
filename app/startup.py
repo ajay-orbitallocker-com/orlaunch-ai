@@ -18,8 +18,8 @@ from qdrant_client import QdrantClient
 
 from config.settings import QdrantRole, Settings, load_settings
 from infra.clients import build_openai_client, build_qdrant_client
-from rag.store.schema import CollectionSpec, build_collection_specs
-from rag.store.setup_collections import check_collection, setup_collections
+from rag.store.qdrant.schema import CollectionSpec, build_collection_specs
+from rag.store.qdrant.setup_collections import check_collection, setup_collections
 
 
 @dataclass(frozen=True)

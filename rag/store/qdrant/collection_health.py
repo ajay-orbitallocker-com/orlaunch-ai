@@ -24,8 +24,8 @@ from dataclasses import dataclass, field
 
 from qdrant_client import QdrantClient
 
-from rag.store.collection_versions import get_live_versions
-from rag.store.schema import DENSE_VECTOR, SPARSE_VECTOR, CollectionSpec
+from rag.store.qdrant.collection_versions import get_live_versions
+from rag.store.qdrant.schema import DENSE_VECTOR, SPARSE_VECTOR, CollectionSpec
 
 
 @dataclass(frozen=True)

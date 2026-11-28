@@ -7,9 +7,7 @@ import uuid
 from qdrant_client import models
 
 from rag.corpus.chunks import Chunk
-from rag.store.schema import DENSE_VECTOR, SPARSE_VECTOR
-
-from pydantic_settings import PostgresSettings
+from rag.store.qdrant.schema import DENSE_VECTOR, SPARSE_VECTOR
 
 # Fixed namespace for point IDs; changing it gives every chunk a new ID, so never change it.
 CHUNK_ID_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, "orlaunch:corpus:chunk")

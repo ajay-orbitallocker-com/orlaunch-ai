@@ -19,9 +19,9 @@ from __future__ import annotations
 
 from qdrant_client import QdrantClient
 
-from rag.store.collection_health import find_collection_problems
-from rag.store.collection_versions import create_empty_version, get_live_versions, set_live_version
-from rag.store.schema import CollectionSpec, SchemaMismatchError
+from rag.store.qdrant.collection_health import find_collection_problems
+from rag.store.qdrant.collection_versions import create_empty_version, get_live_versions, set_live_version
+from rag.store.qdrant.schema import CollectionSpec, SchemaMismatchError
 
 
 def check_collection(client: QdrantClient, spec: CollectionSpec, require_metadata_indexes: bool = True) -> None:

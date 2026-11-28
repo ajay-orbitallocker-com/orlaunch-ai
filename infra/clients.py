@@ -8,7 +8,7 @@ from qdrant_client import QdrantClient
 
 from config.settings import Environment, OpenAISettings, QdrantRole, QdrantSettings, SettingsError,PostgresSettings
 
-def build_open_ai_client(settings : OpenAISettings) -> OpenAI:
+def build_openai_client(settings : OpenAISettings) -> OpenAI:
      
     """OpenAI client with a bounded timeout and the SDK's retry with backoff."""
     return OpenAI(

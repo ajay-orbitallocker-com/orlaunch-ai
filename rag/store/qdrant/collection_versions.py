@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from qdrant_client import QdrantClient, models
 
-from rag.store.schema import DENSE_VECTOR, SPARSE_VECTOR, CollectionSpec, SchemaMismatchError
+from rag.store.qdrant.schema import DENSE_VECTOR, SPARSE_VECTOR, CollectionSpec, SchemaMismatchError
 
 
 def get_live_versions(client: QdrantClient) -> dict[str, str]:
